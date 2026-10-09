@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 public class UIManager : MonoBehaviour
 {
@@ -13,17 +14,38 @@ public class UIManager : MonoBehaviour
     public GameObject gameCompletedPanel;
 
     [Header("Texts")]
-    public Text titleText;
-    public Text introText;
-    public Text theoryText;
-    public Text questionText;
-    public Text hintPopUpText;
-    public Text feedbackText;
-    public Text scoreResultText;
+    public TextMeshProUGUI titleText;
+    public TextMeshProUGUI introText;
+    public TextMeshProUGUI theoryText;
+    public TextMeshProUGUI questionText;
+    public TextMeshProUGUI hintPopUpText;
+    public TextMeshProUGUI feedbackText;
+    public TextMeshProUGUI scoreResultText;
 
     [Header("Buttons")]
     public Button loadGameButton;
     public Button bonusLevelButton;
+
+    [Header("UI Texts for Localization")]
+    public TextMeshProUGUI newGameBtnText;
+    public TextMeshProUGUI loadGameBtnText;
+    public TextMeshProUGUI bonusBtnText;
+    public TextMeshProUGUI languageBtnText;
+    public TextMeshProUGUI mainIntroUIText; // Вступительный текст
+    public TextMeshProUGUI startIntroBtnText; // Кнопка "Начать" в интро
+
+    [Header("Translations")]
+    public LocalizedText newGameString;
+    public LocalizedText loadGameString;
+    public LocalizedText bonusString;
+    public LocalizedText languageString;
+    public LocalizedText mainIntroString;
+    public LocalizedText startIntroBtnString;
+
+    private void Start()
+    {
+        UpdateAllUITexts();
+    }
 
     public void ShowMainMenu()
     {
@@ -113,18 +135,6 @@ public class UIManager : MonoBehaviour
         ShowHintPopUp(comment);
     }
 
-    public void SetLanguageRU()
-    {
-        LocalizationManager.Instance.SetLanguage(Language.RU);
-        ShowMainMenu();
-    }
-
-    public void SetLanguageEN()
-    {
-        LocalizationManager.Instance.SetLanguage(Language.EN);
-        ShowMainMenu();
-    }
-
     private void HideAllPanels()
     {
         mainMenuPanel.SetActive(false);
@@ -134,5 +144,37 @@ public class UIManager : MonoBehaviour
         popUpHintPanel.SetActive(false);
         bonusLevelPanel.SetActive(false);
         gameCompletedPanel.SetActive(false);
+    }
+
+    public void UpdateAllUITexts()
+    {
+        Language current = LocalizationManager.Instance.CurrentLanguage;
+
+        if (newGameBtnText != null) newGameBtnText.text = newGameString.Get(current);
+        if (loadGameBtnText != null) loadGameBtnText.text = loadGameString.Get(current);
+        if (bonusBtnText != null) bonusBtnText.text = bonusString.Get(current);
+        if (languageBtnText != null) languageBtnText.text = languageString.Get(current);
+        if (mainIntroUIText != null) mainIntroUIText.text = mainIntroString.Get(current);
+        if (startIntroBtnText != null) startIntroBtnText.text = startIntroBtnString.Get(current);
+    }
+
+    public void ToggleLanguage()
+    {
+        if (LocalizationManager.Instance.CurrentLanguage == Language.RU)
+            SetLanguageEN();
+        else
+            SetLanguageRU();
+    }
+
+    public void SetLanguageRU()
+    {
+        LocalizationManager.Instance.SetLanguage(Language.RU);
+        UpdateAllUITexts();
+    }
+
+    public void SetLanguageEN()
+    {
+        LocalizationManager.Instance.SetLanguage(Language.EN);
+        UpdateAllUITexts();
     }
 }
