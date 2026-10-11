@@ -1,45 +1,47 @@
 using UnityEngine;
 
+// Компонент, закрепляемый за интерактивными элементами 3D-моделей ПК
 public class InteractiveComponent : MonoBehaviour
 {
-    public ComponentType componentType;
-    public string componentNameRU;
-    public string componentNameEN;
+    public ComponentType Component_Type;
+    public string Component_Name_RU;
+    public string Component_Name_EN;
 
-    private Renderer meshRenderer;
-    private Color originalColor;
-    private bool isHighlighted = false;
+    private Renderer Mesh_Renderer;
+    private Color Original_Color;
+    private bool Is_Highlighted = false;
 
     private void Awake()
     {
-        meshRenderer = GetComponent<Renderer>();
-        if (meshRenderer != null)
+        Mesh_Renderer = GetComponent<Renderer>();
+        if (Mesh_Renderer != null)
         {
-            originalColor = meshRenderer.material.color;
+            Original_Color = Mesh_Renderer.material.color;
         }
     }
 
+    // Управление подсветкой компонента (включение/выключение)
     public void Highlight(bool state)
     {
-        isHighlighted = state;
-        if (meshRenderer != null)
+        Is_Highlighted = state;
+        if (Mesh_Renderer != null)
         {
-            meshRenderer.material.color = state ? Color.yellow : originalColor;
+            Mesh_Renderer.material.color = state ? Color.yellow : Original_Color;
         }
     }
 
     private void OnMouseDown()
     {
-        // Если игра еще на этапе теории и клики заблокированы — ничего не делаем
-        if (GameController.Instance != null && !GameController.Instance.IsInteractionEnabled)
+        // Если игра на этапе теории и клики заблокированы — ничего не делаем
+        if (GameController.Instance != null && !GameController.Instance.Is_Interaction_Enabled)
         {
             return;
         }
 
-        // Передаем клик в главный контроллер, если фаза вопросов активна
+        // Передаем информацию о клике в главный контроллер игры
         if (GameController.Instance != null)
         {
-            GameController.Instance.OnComponentClicked(this);
+            GameController.Instance.On_Component_Clicked(this);
         }
     }
 }

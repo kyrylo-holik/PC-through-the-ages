@@ -1,302 +1,283 @@
-using System.Xml;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
+// Менеджер пользовательского интерфейса (UI) и переключения панелей
 public class UIManager : MonoBehaviour
 {
     [Header("Panels")]
-    public GameObject mainMenuPanel;
-    public GameObject mainIntroPanel;
-    public GameObject levelIntroAndTheoryPanel;
-    public GameObject gameplayHUD;
-    public GameObject popUpHintPanel;
-    public GameObject bonusLevelPanel;
-    public GameObject gameCompletedPanel;
+    public GameObject Main_Menu_Panel;
+    public GameObject Main_Intro_Panel;
+    public GameObject Level_Intro_And_Theory_Panel;
+    public GameObject Gameplay_HUD;
+    public GameObject Pop_Up_Hint_Panel;
+    public GameObject Bonus_Level_Panel;
+    public GameObject Game_Completed_Panel;
 
     [Header("Texts")]
-    public TextMeshProUGUI titleText;
-    public TextMeshProUGUI introText;
-    public TextMeshProUGUI theoryText;
-    public TextMeshProUGUI questionText;
-    public TextMeshProUGUI hintPopUpText;
-    public TextMeshProUGUI feedbackText;
-    public TextMeshProUGUI scoreResultText;
+    public TextMeshProUGUI Title_Text;
+    public TextMeshProUGUI Intro_Text;
+    public TextMeshProUGUI Theory_Text;
+    public TextMeshProUGUI Question_Text;
+    public TextMeshProUGUI Hint_Pop_Up_Text;
+    public TextMeshProUGUI Feedback_Text;
+    public TextMeshProUGUI Score_Result_Text;
 
     [Header("Buttons")]
-    public Button loadGameButton;
-    public Button bonusLevelButton;
+    public Button Bonus_Level_Button; // Единственная интерактивная кнопка в меню с условием разблокировки
 
     [Header("UI Texts for Localization")]
-    public TextMeshProUGUI newGameBtnText;
-    public TextMeshProUGUI loadGameBtnText;
-    public TextMeshProUGUI bonusBtnText;
-    public TextMeshProUGUI languageBtnText;
-    public TextMeshProUGUI mainIntroUIText; // Вступительный текст
-    public TextMeshProUGUI startIntroBtnText; // Кнопка "Начать" в интро
-    public TextMeshProUGUI levelStartBtnText; // Кнопка "Продолжить" в интро уровня
-    public TextMeshProUGUI levelCloseHintPopUp; // Кнопка "Закрыть" подсказку в интро уровня
-    public TextMeshProUGUI returnToMenuBtnText; // Кнопка возврата в меню
+    public TextMeshProUGUI New_Game_Button_Text;
+    public TextMeshProUGUI Bonus_Button_Text;
+    public TextMeshProUGUI Language_Button_Text;
+    public TextMeshProUGUI Main_Intro_UI_Text;
+    public TextMeshProUGUI Start_Intro_Button_Text;
+    public TextMeshProUGUI Level_Start_Button_Text;
+    public TextMeshProUGUI Level_Close_Hint_Pop_Up;
+    public TextMeshProUGUI Return_To_Menu_Button_Text;
 
     [Header("Translations")]
-    public LocalizedText newGameString;
-    public LocalizedText loadGameString;
-    public LocalizedText bonusString;
-    public LocalizedText languageString;
-    public LocalizedText mainIntroString;
-    public LocalizedText startIntroBtnString;
-    public LocalizedText level1StartBtnString = new LocalizedText { RU = "Продолжить", EN = "Continue" };
-    public LocalizedText level2StartBtnString = new LocalizedText { RU = "Продолжить", EN = "Continue" };
-    public LocalizedText level3StartBtnString = new LocalizedText { RU = "Продолжить", EN = "Continue" };
-    public LocalizedText level4StartBtnString = new LocalizedText { RU = "Продолжить", EN = "Continue" };
-    public LocalizedText level1CloseHintPopUpString = new LocalizedText { RU = "Закрыть", EN = "Close" };
-    public LocalizedText level2CloseHintPopUpString = new LocalizedText { RU = "Закрыть", EN = "Close" };
-    public LocalizedText level3CloseHintPopUpString = new LocalizedText { RU = "Закрыть", EN = "Close" };
-    public LocalizedText level4CloseHintPopUpString = new LocalizedText { RU = "Закрыть", EN = "Close" };
-    public LocalizedText returnToMenuString = new LocalizedText { RU = "Главное меню", EN = "Main Menu" };
-
-    [Header("Bonus Level UI Elements")]
-    public GameObject bonusButtonsContainer; // Контейнер, в котором лежат три кнопки (Intel, AMD, Nvidia)
+    public LocalizedText New_Game_String;
+    public LocalizedText Bonus_String;
+    public LocalizedText Language_String;
+    public LocalizedText Main_Intro_String;
+    public LocalizedText Start_Intro_Button_String;
+    public LocalizedText Level_Start_Button_String = new LocalizedText { RU = "Продолжить", EN = "Continue" };
+    public LocalizedText Level_Close_Hint_Pop_Up_String = new LocalizedText { RU = "Закрыть", EN = "Close" };
+    public LocalizedText Return_To_Menu_String = new LocalizedText { RU = "Главное меню", EN = "Main Menu" };
 
     [Header("Bonus Level Elements")]
-    public GameObject[] bonusBrandButtons; // Ваши 3 кнопки (Intel, AMD, Nvidia)
-    public TextMeshProUGUI bonusResultText;  // Текст для отображения результата выбора в бонусе
-    public TextMeshProUGUI bonusTitleText;   // Текст заголовка «Выберите производителя»
+    public GameObject[] Bonus_Brand_Buttons;
+    public TextMeshProUGUI Bonus_Result_Text;
+    public TextMeshProUGUI Bonus_Title_Text;
 
     [Header("Bonus Level Translations")]
-    public LocalizedText bonusTitleString = new LocalizedText
-    {
-        RU = "Выберите производителя:",
-        EN = "Choose a manufacturer:"
-    };
-    public LocalizedText intelComment = new LocalizedText
-    {
-        RU = "Intel — отличный и надежный выбор для работы и вычислений!",
-        EN = "Intel is an excellent and reliable choice for work and computing!"
-    };
-    public LocalizedText amdComment = new LocalizedText
-    {
-        RU = "AMD — великолепный баланс цены и многопоточной мощности!",
-        EN = "AMD is a great balance of price and multi-threaded power!"
-    };
-    public LocalizedText nvidiaComment = new LocalizedText
-    {
-        RU = "Nvidia — то что надо для игр, дизайна и ИИ!",
-        EN = "Nvidia is just what you need for gaming, design, and AI!"
-    };
+    public LocalizedText Bonus_Title_String = new LocalizedText { RU = "Выберите производителя:", EN = "Choose a manufacturer:" };
+    public LocalizedText Intel_Comment = new LocalizedText { RU = "Intel — отличный и надежный выбор для работы и вычислений!", EN = "Intel is an excellent and reliable choice!" };
+    public LocalizedText Amd_Comment = new LocalizedText { RU = "AMD — великолепный баланс цены и многопоточной мощности!", EN = "AMD is a great balance of price and power!" };
+    public LocalizedText Nvidia_Comment = new LocalizedText { RU = "Nvidia — то что надо для игр, дизайна и ИИ!", EN = "Nvidia is just what you need for gaming and AI!" };
 
     private void Start()
     {
-        UpdateAllUITexts();
+        Update_All_UI_Texts();
+        Show_Main_Menu();
     }
 
-    public void ShowMainMenu()
+    // Отображение главного меню игры
+    public void Show_Main_Menu()
     {
-        HideAllPanels();
-        mainMenuPanel.SetActive(true);
-        
-        // Разблокировка кнопки загрузки и бонуса
-        loadGameButton.interactable = SaveManager.GetSavedLevel() > 0;
-        bonusLevelButton.interactable = SaveManager.IsBonusUnlocked();
+        Hide_All_Panels();
+        if (Main_Menu_Panel != null) Main_Menu_Panel.SetActive(true);
+
+        // Проверяем доступность бонусного уровня при входе в меню
+        if (Bonus_Level_Button != null)
+            Bonus_Level_Button.interactable = SaveManager.Is_Bonus_Unlocked();
     }
 
-    public void ShowMainIntro()
+    // Показ вступительного экрана перед началом игры
+    public void Show_Main_Intro()
     {
-        HideAllPanels();
-        mainIntroPanel.SetActive(true);
+        Hide_All_Panels();
+        if (Main_Intro_Panel != null) Main_Intro_Panel.SetActive(true);
     }
 
-    public void ShowLevelIntroAndTheory(string title, string cutscene, string theory)
+    // Показ экрана теории и интро для конкретного уровня
+    public void Show_Level_Intro_And_Theory(string title, string cutscene, string theory)
     {
-        HideAllPanels();
-        levelIntroAndTheoryPanel.SetActive(true);
-        titleText.text = title;
-        introText.text = cutscene;
-        theoryText.text = theory;
+        Hide_All_Panels();
+        if (Level_Intro_And_Theory_Panel != null) Level_Intro_And_Theory_Panel.SetActive(true);
+        if (Title_Text != null) Title_Text.text = title;
+        if (Intro_Text != null) Intro_Text.text = cutscene;
+        if (Theory_Text != null) Theory_Text.text = theory;
     }
 
-    public void OnStartLevelButtonClicked()
+    // Обработка нажатия на кнопку старта уровня (переход к вопросам)
+    public void On_Start_Level_Button_Clicked()
     {
-        HideAllPanels();
-        gameplayHUD.SetActive(true);
-        GameController.Instance.BeginQuestionsPhase();
+        Hide_All_Panels();
+        if (Gameplay_HUD != null) Gameplay_HUD.SetActive(true);
+        if (GameController.Instance != null) GameController.Instance.Begin_Questions_Phase();
     }
 
-    public void ShowQuestion(string qText)
+    public void Show_Question(string qText)
     {
-        questionText.text = qText;
+        if (Question_Text != null) Question_Text.text = qText;
     }
 
-    public void ShowHintPopUp(string hint)
+    public void Show_Hint_Popup(string hint)
     {
-        popUpHintPanel.SetActive(true);
-        hintPopUpText.text = hint;
+        if (Pop_Up_Hint_Panel != null) Pop_Up_Hint_Panel.SetActive(true);
+        if (Hint_Pop_Up_Text != null) Hint_Pop_Up_Text.text = hint;
     }
 
-    public void CloseHintPopUp()
+    public void Close_Hint_Popup()
     {
-        popUpHintPanel.SetActive(false);
+        if (Pop_Up_Hint_Panel != null) Pop_Up_Hint_Panel.SetActive(false);
     }
 
-    public void ShowFeedback(bool isCorrect, string message)
+    public void Show_Feedback(bool isCorrect, string message)
     {
-        feedbackText.gameObject.SetActive(true);
-        feedbackText.color = isCorrect ? Color.green : Color.red;
-        feedbackText.text = message;
-        CancelInvoke(nameof(HideFeedback));
-        Invoke(nameof(HideFeedback), 2f);
-    }
-
-    private void HideFeedback()
-    {
-        feedbackText.gameObject.SetActive(false);
-    }
-
-    public void ShowGameCompletionScreen(float accuracy)
-    {
-        HideAllPanels();
-        gameCompletedPanel.SetActive(true);
-        scoreResultText.text = $"Игра завершена!\nТочность ответов: {accuracy:F1}%\n" +
-            (accuracy >= 80f ? "Бонусный уровень разблокирован в Главном Меню!" : "Слишком много ошибок для разблокировки бонуса.");
-    }
-
-    public void OpenBonusLevel()
-    {
-        HideAllPanels();
-        bonusLevelPanel.SetActive(true);
-
-        // Обновляем текст заголовка под текущий язык
-        if (bonusTitleText != null)
+        if (Feedback_Text != null)
         {
-            Language currentLang = LocalizationManager.Instance.CurrentLanguage;
-            bonusTitleText.text = bonusTitleString.Get(currentLang);
-            bonusTitleText.gameObject.SetActive(true);
+            Feedback_Text.gameObject.SetActive(true);
+            Feedback_Text.color = isCorrect ? Color.green : Color.red;
+            Feedback_Text.text = message;
+        }
+        CancelInvoke(nameof(Hide_Feedback));
+        Invoke(nameof(Hide_Feedback), 2f);
+    }
+
+    private void Hide_Feedback()
+    {
+        if (Feedback_Text != null) Feedback_Text.gameObject.SetActive(false);
+    }
+
+    public void Show_Game_Completion_Screen(float accuracy)
+    {
+        Hide_All_Panels();
+        if (Game_Completed_Panel != null) Game_Completed_Panel.SetActive(true);
+        if (Score_Result_Text != null)
+        {
+            Score_Result_Text.text = $"Игра завершена!\nТочность ответов: {accuracy:F1}%\n" +
+                (accuracy >= 80f ? "Бонусный уровень разблокирован в Главном Меню!" : "Слишком много ошибок для разблокировки бонуса.");
+        }
+    }
+
+    // Открытие бонусного уровня
+    public void Open_Bonus_Level()
+    {
+        Hide_All_Panels();
+        if (Bonus_Level_Panel != null) Bonus_Level_Panel.SetActive(true);
+
+        if (Bonus_Title_Text != null && LocalizationManager.Instance != null)
+        {
+            Language currentLang = LocalizationManager.Instance.Current_Language;
+            Bonus_Title_Text.text = Bonus_Title_String.Get_Text(currentLang);
+            Bonus_Title_Text.gameObject.SetActive(true);
         }
 
-        // Убеждаемся, что кнопки видны при входе на уровень
-        if (bonusBrandButtons != null)
+        if (Bonus_Brand_Buttons != null)
         {
-            foreach (var btn in bonusBrandButtons)
+            foreach (var button in Bonus_Brand_Buttons)
             {
-                if (btn != null) btn.SetActive(true);
+                if (button != null) button.SetActive(true);
             }
         }
 
-        // Скрываем прошлый результат, если он остался
-        if (bonusResultText != null)
+        if (Bonus_Result_Text != null)
         {
-            bonusResultText.text = "";
-            bonusResultText.gameObject.SetActive(false);
+            Bonus_Result_Text.text = "";
+            Bonus_Result_Text.gameObject.SetActive(false);
         }
     }
 
-    public void OnBonusChoice(string vendorName)
+    // Выбор бренда в бонусном уровне
+    public void On_Bonus_Choice(string vendorName)
     {
-        Language currentLang = LocalizationManager.Instance.CurrentLanguage;
+        Language currentLang = LocalizationManager.Instance != null ? LocalizationManager.Instance.Current_Language : Language.RU;
         string comment = "";
 
         switch (vendorName)
         {
-            case "Intel": comment = intelComment.Get(currentLang); break;
-            case "AMD": comment = amdComment.Get(currentLang); break;
-            case "Nvidia": comment = nvidiaComment.Get(currentLang); break;
+            case "Intel": comment = Intel_Comment.Get_Text(currentLang); break;
+            case "AMD": comment = Amd_Comment.Get_Text(currentLang); break;
+            case "Nvidia": comment = Nvidia_Comment.Get_Text(currentLang); break;
         }
 
-        // 1. Скрываем заголовок и кнопки брендов
-        if (bonusTitleText != null) bonusTitleText.gameObject.SetActive(false);
+        if (Bonus_Title_Text != null) Bonus_Title_Text.gameObject.SetActive(false);
 
-        if (bonusBrandButtons != null)
+        if (Bonus_Brand_Buttons != null)
         {
-            foreach (var btn in bonusBrandButtons)
+            foreach (var button in Bonus_Brand_Buttons)
             {
-                if (btn != null) btn.SetActive(false);
+                if (button != null) button.SetActive(false);
             }
         }
 
-        // 2. Показываем текст комментария
-        if (bonusResultText != null)
+        if (Bonus_Result_Text != null)
         {
-            bonusResultText.gameObject.SetActive(true);
-            bonusResultText.text = comment;
+            Bonus_Result_Text.gameObject.SetActive(true);
+            Bonus_Result_Text.text = comment;
         }
 
-        // 3. Запускаем таймер на 10 секунд и возврат в главное меню
         StopAllCoroutines();
-        StartCoroutine(ReturnToMenuAfterBonusDelay(10f));
+        StartCoroutine(Return_To_Menu_After_Bonus_Delay(10f));
     }
 
-    private System.Collections.IEnumerator ReturnToMenuAfterBonusDelay(float delay)
+    private System.Collections.IEnumerator Return_To_Menu_After_Bonus_Delay(float delay)
     {
         yield return new WaitForSeconds(delay);
 
-        if (bonusResultText != null)
+        if (Bonus_Result_Text != null)
         {
-            bonusResultText.text = "";
-            bonusResultText.gameObject.SetActive(false);
+            Bonus_Result_Text.text = "";
+            Bonus_Result_Text.gameObject.SetActive(false);
         }
 
-        if (bonusTitleText != null) bonusTitleText.gameObject.SetActive(true);
+        if (Bonus_Title_Text != null) Bonus_Title_Text.gameObject.SetActive(true);
 
-        if (bonusBrandButtons != null)
+        if (Bonus_Brand_Buttons != null)
         {
-            foreach (var btn in bonusBrandButtons)
+            foreach (var button in Bonus_Brand_Buttons)
             {
-                if (btn != null) btn.SetActive(true);
+                if (button != null) button.SetActive(true);
             }
         }
 
-        ReturnToMainMenu();
+        Return_To_Menu();
     }
 
-    private void HideAllPanels()
+    // Скрытие всех игровых панелей интерфейса
+    private void Hide_All_Panels()
     {
-        mainMenuPanel.SetActive(false);
-        mainIntroPanel.SetActive(false);
-        levelIntroAndTheoryPanel.SetActive(false);
-        gameplayHUD.SetActive(false);
-        popUpHintPanel.SetActive(false);
-        bonusLevelPanel.SetActive(false);
-        gameCompletedPanel.SetActive(false);
+        if (Main_Menu_Panel != null) Main_Menu_Panel.SetActive(false);
+        if (Main_Intro_Panel != null) Main_Intro_Panel.SetActive(false);
+        if (Level_Intro_And_Theory_Panel != null) Level_Intro_And_Theory_Panel.SetActive(false);
+        if (Gameplay_HUD != null) Gameplay_HUD.SetActive(false);
+        if (Pop_Up_Hint_Panel != null) Pop_Up_Hint_Panel.SetActive(false);
+        if (Bonus_Level_Panel != null) Bonus_Level_Panel.SetActive(false);
+        if (Game_Completed_Panel != null) Game_Completed_Panel.SetActive(false);
     }
 
-    public void UpdateAllUITexts()
+    // Обновление текстов интерфейса при смене языка
+    public void Update_All_UI_Texts()
     {
-        Language current = LocalizationManager.Instance.CurrentLanguage;
+        if (LocalizationManager.Instance == null) return;
+        Language current = LocalizationManager.Instance.Current_Language;
 
-        if (newGameBtnText != null) newGameBtnText.text = newGameString.Get(current);
-        if (loadGameBtnText != null) loadGameBtnText.text = loadGameString.Get(current);
-        if (bonusBtnText != null) bonusBtnText.text = bonusString.Get(current);
-        if (languageBtnText != null) languageBtnText.text = languageString.Get(current);
-        if (mainIntroUIText != null) mainIntroUIText.text = mainIntroString.Get(current);
-        if (startIntroBtnText != null) startIntroBtnText.text = startIntroBtnString.Get(current);
-        if (levelStartBtnText != null) levelStartBtnText.text = level1StartBtnString.Get(current);
-        if (levelCloseHintPopUp != null) levelCloseHintPopUp.text = level1CloseHintPopUpString.Get(current);
-        if (returnToMenuBtnText != null) returnToMenuBtnText.text = returnToMenuString.Get(current);
+        if (New_Game_Button_Text != null) New_Game_Button_Text.text = New_Game_String.Get_Text(current);
+        if (Bonus_Button_Text != null) Bonus_Button_Text.text = Bonus_String.Get_Text(current);
+        if (Language_Button_Text != null) Language_Button_Text.text = Language_String.Get_Text(current);
+        if (Main_Intro_UI_Text != null) Main_Intro_UI_Text.text = Main_Intro_String.Get_Text(current);
+        if (Start_Intro_Button_Text != null) Start_Intro_Button_Text.text = Start_Intro_Button_String.Get_Text(current);
+        if (Level_Start_Button_Text != null) Level_Start_Button_Text.text = Level_Start_Button_String.Get_Text(current);
+        if (Level_Close_Hint_Pop_Up != null) Level_Close_Hint_Pop_Up.text = Level_Close_Hint_Pop_Up_String.Get_Text(current);
+        if (Return_To_Menu_Button_Text != null) Return_To_Menu_Button_Text.text = Return_To_Menu_String.Get_Text(current);
     }
 
-    public void ToggleLanguage()
+    public void Toggle_Language()
     {
-        if (LocalizationManager.Instance.CurrentLanguage == Language.RU)
-            SetLanguageEN();
+        if (LocalizationManager.Instance != null && LocalizationManager.Instance.Current_Language == Language.RU)
+            Set_Language_EN();
         else
-            SetLanguageRU();
+            Set_Language_RU();
     }
 
-    public void SetLanguageRU()
+    public void Set_Language_RU()
     {
-        LocalizationManager.Instance.SetLanguage(Language.RU);
-        UpdateAllUITexts();
+        if (LocalizationManager.Instance != null) LocalizationManager.Instance.Set_Language(Language.RU);
+        Update_All_UI_Texts();
     }
 
-    public void SetLanguageEN()
+    public void Set_Language_EN()
     {
-        LocalizationManager.Instance.SetLanguage(Language.EN);
-        UpdateAllUITexts();
+        if (LocalizationManager.Instance != null) LocalizationManager.Instance.Set_Language(Language.EN);
+        Update_All_UI_Texts();
     }
 
-    public void ReturnToMainMenu()
+    public void Return_To_Menu()
     {
-        HideAllPanels();
-        ShowMainMenu();
+        Hide_All_Panels();
+        Show_Main_Menu();
     }
 }

@@ -1,16 +1,18 @@
 using UnityEngine;
 
+// Менеджер локализации для переключения языков в игре
 public class LocalizationManager : MonoBehaviour
 {
     public static LocalizationManager Instance;
-    public Language CurrentLanguage = Language.RU;
+    public Language Current_Language = Language.RU;
 
     private void Awake()
     {
+        // Инициализация паттерна Singleton с сохранением между сценами
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject);
+            Object.DontDestroyOnLoad(gameObject);
         }
         else
         {
@@ -18,8 +20,9 @@ public class LocalizationManager : MonoBehaviour
         }
     }
 
-    public void SetLanguage(Language lang)
+    // Установка текущего языка интерфейса
+    public void Set_Language(Language lang)
     {
-        CurrentLanguage = lang;
+        Current_Language = lang;
     }
 }

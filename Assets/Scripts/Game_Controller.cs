@@ -1,24 +1,28 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+// Главный контроллер игровой логики, управления уровнями и вопросами
 public class GameController : MonoBehaviour
 {
     public static GameController Instance;
 
-    public Transform pcSpawnPoint;
-    public UIManager uiManager;
+    public Transform PC_Spawn_Point;
+    public UIManager UI_Manager_Ref;
 
-    private int currentEraIndex = 0;
-    private int currentQuestionIndex = 0;
-    private int errorCountOnCurrentQuestion = 0;
-    
-    private int totalQuestionsAsked = 0;
-    private int totalCorrectAnswers = 0;
+    private int Current_Era_Index = 0;
+    private int Current_Question_Index = 0;
+    private int Error_Count_On_Current_Question = 0;
 
-    private GameObject currentPCModel;
-    private EraLevelData currentEraData;
-    private List<EraLevelData> allErasData;
-    private bool isCaseOpen = false;
+    private int Total_Questions_Asked = 0;
+    private int Total_Correct_Answers = 0;
+
+    private GameObject Current_PC_Model;
+    private EraLevelData Current_Era_Data;
+    private List<EraLevelData> All_Eras_Data;
+    private bool Is_Case_Open = false;
+    private bool Is_Interaction_Active = false; // Флаг разрешения кликов по деталям
+
+    public bool Is_Interaction_Enabled => Is_Interaction_Active;
 
     private void Awake()
     {
@@ -27,250 +31,234 @@ public class GameController : MonoBehaviour
 
     private void Start()
     {
-        InitializeGameData();
-        uiManager.ShowMainMenu();
+        Initialize_Game_Data();
+        UI_Manager_Ref.Show_Main_Menu();
     }
 
     private void Update()
     {
-        // Вращение модели ПК зажатием правой кнопки мыши
-        if (currentPCModel != null && Input.GetMouseButton(1))
+        // Вращение 3D-модели ПК с помощью зажатия правой кнопки мыши
+        if (Current_PC_Model != null && Input.GetMouseButton(1))
         {
             float rotX = Input.GetAxis("Mouse X") * 5f;
-            currentPCModel.transform.Rotate(Vector3.up, -rotX, Space.World);
+            Current_PC_Model.transform.Rotate(Vector3.up, -rotX, Space.World);
         }
     }
 
-    public void StartNewGame()
+    public void Start_New_Game()
     {
-        SaveManager.ResetData();
-        currentEraIndex = 0;
-        totalQuestionsAsked = 0;
-        totalCorrectAnswers = 0;
-        uiManager.ShowMainIntro();
+        SaveManager.Reset_Data();
+        Current_Era_Index = 0;
+        Total_Questions_Asked = 0;
+        Total_Correct_Answers = 0;
+        UI_Manager_Ref.Show_Main_Intro();
     }
 
-    public void LoadSavedGame()
+    public void Start_Era_Level(int eraIndex)
     {
-        currentEraIndex = SaveManager.GetSavedLevel();
-        StartEraLevel(currentEraIndex);
-    }
+        Current_Era_Index = eraIndex;
+        Current_Question_Index = 0;
+        Error_Count_On_Current_Question = 0;
+        Is_Case_Open = false;
+        Is_Interaction_Active = false; // Кликать по деталям во время теории нельзя
 
-    public void StartEraLevel(int eraIndex)
-    {
-        currentEraIndex = eraIndex;
-        currentQuestionIndex = 0;
-        errorCountOnCurrentQuestion = 0;
-        isCaseOpen = false;
-        isInteractionActive = false; // Кликать по деталям пока НЕЛЬЗЯ (только вращать)
+        if (Current_PC_Model != null) Destroy(Current_PC_Model);
+        Current_PC_Model = ProceduralPCModels.Create_Era_Model(eraIndex, PC_Spawn_Point);
 
-        if (currentPCModel != null) Destroy(currentPCModel);
-        // Создаем модель сразу, чтобы она была видна на фоне теории и вращалась
-        currentPCModel = ProceduralPCModels.CreateEraModel(eraIndex, pcSpawnPoint);
+        Current_Era_Data = All_Eras_Data[eraIndex];
 
-        currentEraData = allErasData[eraIndex];
-
-        uiManager.ShowLevelIntroAndTheory(
-            currentEraData.eraTitle.Get(LocalizationManager.Instance.CurrentLanguage),
-            currentEraData.introCutsceneText.Get(LocalizationManager.Instance.CurrentLanguage),
-            currentEraData.theoryCardText.Get(LocalizationManager.Instance.CurrentLanguage)
+        UI_Manager_Ref.Show_Level_Intro_And_Theory(
+            Current_Era_Data.Era_Title.Get_Text(LocalizationManager.Instance.Current_Language),
+            Current_Era_Data.Intro_Cutscene_Text.Get_Text(LocalizationManager.Instance.Current_Language),
+            Current_Era_Data.Theory_Card_Text.Get_Text(LocalizationManager.Instance.Current_Language)
         );
     }
 
-    private bool isInteractionActive = false; // Флаг разрешения кликов по модели
-
-    public bool IsInteractionEnabled => isInteractionActive; // Публичное свойство для проверки из других скриптов
-
-    public void BeginQuestionsPhase()
+    public void Begin_Questions_Phase()
     {
-        isInteractionActive = true; // Разрешаем клики по деталям после нажатия "Продолжить"
-        ShowCurrentQuestion();
+        Is_Interaction_Active = true; // Разрешаем клики после закрытия теории
+        Show_Current_Question();
     }
 
-    private void ShowCurrentQuestion()
+    private void Show_Current_Question()
     {
-        if (currentQuestionIndex < currentEraData.questions.Count)
+        if (Current_Question_Index < Current_Era_Data.Questions.Count)
         {
-            var q = currentEraData.questions[currentQuestionIndex];
-            uiManager.ShowQuestion(q.questionText.Get(LocalizationManager.Instance.CurrentLanguage));
+            var q = Current_Era_Data.Questions[Current_Question_Index];
+            UI_Manager_Ref.Show_Question(q.Question_Text.Get_Text(LocalizationManager.Instance.Current_Language));
         }
         else
         {
-            // Уровень пройден!
-            SaveManager.SaveProgress(currentEraIndex + 1, totalQuestionsAsked, totalCorrectAnswers);
-            
-            if (currentEraIndex + 1 < allErasData.Count)
+            // Переход к следующему уровню или завершение игры
+            SaveManager.Save_Progress(Current_Era_Index + 1, Total_Questions_Asked, Total_Correct_Answers);
+
+            if (Current_Era_Index + 1 < All_Eras_Data.Count)
             {
-                StartEraLevel(currentEraIndex + 1);
+                Start_Era_Level(Current_Era_Index + 1);
             }
             else
             {
-                uiManager.ShowGameCompletionScreen(SaveManager.GetAccuracyPercentage());
+                UI_Manager_Ref.Show_Game_Completion_Screen(SaveManager.Get_Accuracy_Percentage());
             }
         }
     }
 
-    public void ToggleCaseCover()
+    public void Toggle_Case_Cover()
     {
-        if (currentPCModel == null) return;
-        Transform cover = currentPCModel.transform.Find("SideCover");
+        if (Current_PC_Model == null) return;
+        Transform cover = Current_PC_Model.transform.Find("SideCover");
         if (cover != null)
         {
-            isCaseOpen = !isCaseOpen;
-            cover.gameObject.SetActive(!isCaseOpen);
+            Is_Case_Open = !Is_Case_Open;
+            cover.gameObject.SetActive(!Is_Case_Open);
         }
     }
 
-    public void OnComponentClicked(InteractiveComponent component)
+    public void On_Component_Clicked(InteractiveComponent component)
     {
-        // Если кликнули по крышке корпуса — открываем/закрываем её и выходим
-        if (component.componentType == ComponentType.CaseCover)
+        // Открытие/закрытие крышки корпуса по клику
+        if (component.Component_Type == ComponentType.CaseCover)
         {
-            ToggleCaseCover();
+            Toggle_Case_Cover();
             return;
         }
 
-        if (currentEraData == null || currentQuestionIndex >= currentEraData.questions.Count) return;
+        if (Current_Era_Data == null || Current_Question_Index >= Current_Era_Data.Questions.Count) return;
 
-        QuestionData currentQData = currentEraData.questions[currentQuestionIndex];
-        Language lang = LocalizationManager.Instance.CurrentLanguage;
+        QuestionData currentQData = Current_Era_Data.Questions[Current_Question_Index];
+        Language lang = LocalizationManager.Instance.Current_Language;
 
-        if (component.componentType == currentQData.targetComponent)
+        if (component.Component_Type == currentQData.Target_Component)
         {
-            // ПРАВИЛЬНЫЙ ОТВЕТ
-            totalQuestionsAsked++;
-            totalCorrectAnswers++;
-            errorCountOnCurrentQuestion = 0;
+            // Обработка правильного ответа
+            Total_Questions_Asked++;
+            Total_Correct_Answers++;
+            Error_Count_On_Current_Question = 0;
 
-            ResetAllHighlights();
+            Reset_All_Highlights();
 
             string correctMsg = (lang == Language.RU) ? "Верно!" : "Correct!";
-            uiManager.ShowFeedback(true, correctMsg);
-            currentQuestionIndex++;
-            Invoke(nameof(ShowCurrentQuestion), 1.5f);
+            UI_Manager_Ref.Show_Feedback(true, correctMsg);
+            Current_Question_Index++;
+            Invoke(nameof(Show_Current_Question), 1.5f);
         }
         else
         {
-            // ОШИБКА
-            errorCountOnCurrentQuestion++;
+            // Обработка ошибки
+            Error_Count_On_Current_Question++;
             string wrongMsg = (lang == Language.RU) ? "Не тот компонент. Попробуй еще раз." : "Wrong component. Try again.";
-            uiManager.ShowFeedback(false, wrongMsg);
+            UI_Manager_Ref.Show_Feedback(false, wrongMsg);
 
-            if (errorCountOnCurrentQuestion == 3)
+            if (Error_Count_On_Current_Question == 3)
             {
-                uiManager.ShowHintPopUp(currentQData.hintText.Get(lang));
+                UI_Manager_Ref.Show_Hint_Popup(currentQData.Hint_Text.Get_Text(lang));
             }
-            else if (errorCountOnCurrentQuestion >= 5)
+            else if (Error_Count_On_Current_Question >= 5)
             {
-                HighlightTargetComponent(currentQData.targetComponent);
+                Highlight_Target_Component(currentQData.Target_Component);
                 string highlightMsg = (lang == Language.RU) ? "Правильный элемент подсвечен желтым цветом!" : "The correct element is highlighted in yellow!";
-                uiManager.ShowHintPopUp(highlightMsg);
+                UI_Manager_Ref.Show_Hint_Popup(highlightMsg);
             }
         }
     }
 
-    private void HighlightTargetComponent(ComponentType type)
+    private void Highlight_Target_Component(ComponentType type)
     {
-        foreach (var comp in currentPCModel.GetComponentsInChildren<InteractiveComponent>())
+        foreach (var comp in Current_PC_Model.GetComponentsInChildren<InteractiveComponent>())
         {
-            if (comp.componentType == type)
+            if (comp.Component_Type == type)
             {
                 comp.Highlight(true);
             }
         }
     }
 
-    private void ResetAllHighlights()
+    private void Reset_All_Highlights()
     {
-        if (currentPCModel == null) return;
-        foreach (var comp in currentPCModel.GetComponentsInChildren<InteractiveComponent>())
+        if (Current_PC_Model == null) return;
+        foreach (var comp in Current_PC_Model.GetComponentsInChildren<InteractiveComponent>())
         {
             comp.Highlight(false);
         }
     }
 
-    private void InitializeGameData()
+    private void Initialize_Game_Data()
     {
-        // База данных уровней, вопросов и теории
-        allErasData = new List<EraLevelData>
+        // Инициализация базы данных уровней, вопросов и теоретической информации
+        All_Eras_Data = new List<EraLevelData>
         {
-            // ЭПОХА 1
             new EraLevelData
             {
-                eraIndex = 0,
-                eraTitle = new LocalizedText { RU = "I Поколение (1943–1955): Ламповые ЭВМ", EN = "Era I (1943–1955): Vacuum Tube Computers" },
-                introCutsceneText = new LocalizedText { RU = "Добро пожаловать в 1950-е годы! Компьютеры занимают целые комнаты и выделяют много тепла.", EN = "Welcome to the 1950s! Computers occupy whole rooms and emit huge heat." },
-                theoryCardText = new LocalizedText { RU = "В первых ЭВМ вместо транзисторов использовались электронно-вакуумные лампы. Они часто перегорали, а данные вводились с помощью перфокарт.", EN = "First computers used vacuum tubes. They burned out frequently, and data was entered via punch cards." },
-                questions = new List<QuestionData>
+                Era_Index = 0,
+                Era_Title = new LocalizedText { RU = "I Поколение (1943–1955): Ламповые ЭВМ", EN = "Era I (1943–1955): Vacuum Tube Computers" },
+                Intro_Cutscene_Text = new LocalizedText { RU = "Добро пожаловать в 1950-е годы! Компьютеры занимают целые комнаты.", EN = "Welcome to the 1950s! Computers occupy whole rooms." },
+                Theory_Card_Text = new LocalizedText { RU = "В первых ЭВМ вместо транзисторов использовались электронно-вакуумные лампы.", EN = "First computers used vacuum tubes." },
+                Questions = new List<QuestionData>
                 {
                     new QuestionData {
-                        questionText = new LocalizedText { RU = "Найди главный переключающий элемент 1-го поколения ЭВМ.", EN = "Find the main switching element of 1st gen computers." },
-                        targetComponent = ComponentType.VacuumTube,
-                        hintText = new LocalizedText { RU = "Ищи стеклянные колбы, похожие на лампочки.", EN = "Look for glass bulbs similar to lightbulbs." }
+                        Question_Text = new LocalizedText { RU = "Найди главный переключающий элемент 1-го поколения ЭВМ.", EN = "Find the main switching element of 1st gen computers." },
+                        Target_Component = ComponentType.VacuumTube,
+                        Hint_Text = new LocalizedText { RU = "Ищи стеклянные колбы, похожие на лампочки.", EN = "Look for glass bulbs similar to lightbulbs." }
                     }
                 }
             },
-            // ЭПОХА 2
             new EraLevelData
             {
-                eraIndex = 1,
-                eraTitle = new LocalizedText { RU = "II Поколение (1955–1965): Транзисторы", EN = "Era II (1955–1965): Transistors" },
-                introCutsceneText = new LocalizedText { RU = "Эра транзисторов! Компьютеры стали надежнее, меньше и быстрее.", EN = "The transistor era! Computers became faster and smaller." },
-                theoryCardText = new LocalizedText { RU = "Транзисторы заменили лампы. Появились магнитные ленты для длительного хранения информации.", EN = "Transistors replaced vacuum tubes. Magnetic tapes appeared for storage." },
-                questions = new List<QuestionData>
+                Era_Index = 1,
+                Era_Title = new LocalizedText { RU = "II Поколение (1955–1965): Транзисторы", EN = "Era II (1955–1965): Transistors" },
+                Intro_Cutscene_Text = new LocalizedText { RU = "Эра транзисторов! Компьютеры стали надежнее и меньше.", EN = "The transistor era! Computers became faster and smaller." },
+                Theory_Card_Text = new LocalizedText { RU = "Транзисторы заменили лампы. Появились магнитные ленты.", EN = "Transistors replaced vacuum tubes. Magnetic tapes appeared." },
+                Questions = new List<QuestionData>
                 {
                     new QuestionData {
-                        questionText = new LocalizedText { RU = "Укажи на устройство, используемое для хранения данных на магнитной ленте.", EN = "Point to the magnetic tape storage device." },
-                        targetComponent = ComponentType.Storage,
-                        hintText = new LocalizedText { RU = "Оно похоже на круглые катушки или бобины.", EN = "It looks like round tape reels." }
+                        Question_Text = new LocalizedText { RU = "Укажи на устройство для хранения данных на магнитной ленте.", EN = "Point to the magnetic tape storage device." },
+                        Target_Component = ComponentType.Storage,
+                        Hint_Text = new LocalizedText { RU = "Оно похоже на круглые катушки или бобины.", EN = "It looks like round tape reels." }
                     }
                 }
             },
-            // ЭПОХА 3
             new EraLevelData
             {
-                eraIndex = 2,
-                eraTitle = new LocalizedText { RU = "III Поколение (1965–1980): Интегральные схемы", EN = "Era III (1965–1980): Integrated Circuits" },
-                introCutsceneText = new LocalizedText { RU = "Микросхемы меняют всё. Появляются первые персональные ПК для энтузиастов.", EN = "Integrated circuits change everything. Personal microcomputers appear." },
-                theoryCardText = new LocalizedText { RU = "Интегральная схема объединяет тысячи транзисторов на одном маленьком кусочке кремния.", EN = "Integrated circuits pack thousands of transistors on a tiny piece of silicon." },
-                questions = new List<QuestionData>
+                Era_Index = 2,
+                Era_Title = new LocalizedText { RU = "III Поколение (1965–1980): Интегральные схемы", EN = "Era III (1965–1980): Integrated Circuits" },
+                Intro_Cutscene_Text = new LocalizedText { RU = "Микросхемы меняют всё. Появляются первые персональные ПК.", EN = "Integrated circuits change everything. Personal microcomputers appear." },
+                Theory_Card_Text = new LocalizedText { RU = "Интегральная схема объединяет тысячи транзисторов на кремнии.", EN = "Integrated circuits pack thousands of transistors on silicon." },
+                Questions = new List<QuestionData>
                 {
                     new QuestionData {
-                        questionText = new LocalizedText { RU = "Найди дисковод для сменных гибких дисков (гибких дискет 5.25\").", EN = "Find the drive for 5.25\" floppy disks." },
-                        targetComponent = ComponentType.Storage,
-                        hintText = new LocalizedText { RU = "Ищи узкую щель на передней панели корпуса.", EN = "Look for a narrow slot on the front panel." }
+                        Question_Text = new LocalizedText { RU = "Найди дисковод для гибких дискет 5.25\".", EN = "Find the drive for 5.25\" floppy disks." },
+                        Target_Component = ComponentType.Storage,
+                        Hint_Text = new LocalizedText { RU = "Ищи узкую щель на передней панели корпуса.", EN = "Look for a narrow slot on the front panel." }
                     }
                 }
             },
-            // ЭПОХА 4
             new EraLevelData
             {
-                eraIndex = 3,
-                eraTitle = new LocalizedText { RU = "IV Поколение (1980–2000): Эра Микропроцессоров", EN = "Era IV (1980–2000): Microprocessors" },
-                introCutsceneText = new LocalizedText { RU = "ПК есть в каждом офисе и доме! Появились 3D-ускорители и звуковые карты.", EN = "PCs in every home and office! 3D graphics cards are born." },
-                theoryCardText = new LocalizedText { RU = "СБИС (Сверхбольшие интегральные схемы) позволили разместить весь процессор на одном чипе.", EN = "VLSI allowed the whole CPU to fit onto a single microchip." },
-                questions = new List<QuestionData>
+                Era_Index = 3,
+                Era_Title = new LocalizedText { RU = "IV Поколение (1980–2000): Эра Микропроцессоров", EN = "Era IV (1980–2000): Microprocessors" },
+                Intro_Cutscene_Text = new LocalizedText { RU = "ПК есть в каждом доме! Появились 3D-ускорители.", EN = "PCs in every home! 3D graphics cards are born." },
+                Theory_Card_Text = new LocalizedText { RU = "СБИС позволили разместить весь процессор на одном чипе.", EN = "VLSI allowed the whole CPU to fit onto a single microchip." },
+                Questions = new List<QuestionData>
                 {
                     new QuestionData {
-                        questionText = new LocalizedText { RU = "Открой корпус и найди отдельную плату, отвечающую за 3D-графику.", EN = "Open the case and find the card responsible for 3D graphics." },
-                        targetComponent = ComponentType.GPU,
-                        hintText = new LocalizedText { RU = "Нажми на кнопку 'Открыть корпус' и кликни по планке в слоте AGP/PCI.", EN = "Click 'Open Case' button and click the AGP/PCI card." }
+                        Question_Text = new LocalizedText { RU = "Открой корпус и найди плату, отвечающую за 3D-графику.", EN = "Open the case and find the card responsible for 3D graphics." },
+                        Target_Component = ComponentType.GPU,
+                        Hint_Text = new LocalizedText { RU = "Кликни по планке в слоте AGP/PCI.", EN = "Click the AGP/PCI card." }
                     }
                 }
             },
-            // ЭПОХА 5
             new EraLevelData
             {
-                eraIndex = 4,
-                eraTitle = new LocalizedText { RU = "V Поколение (С 2000-х): Современные станции", EN = "Era V (2000s–Present): Modern Workstations" },
-                introCutsceneText = new LocalizedText { RU = "Многоядерность, прозрачные корпуса, RGB-подсветка и сверхбыстрые накопители.", EN = "Multi-core CPUs, glass cases, RGB and high-speed NVMe storage." },
-                theoryCardText = new LocalizedText { RU = "Современные ПК используют сверхбыстрые накопители NVMe SSD и многоядерные чипы.", EN = "Modern PCs rely on NVMe SSDs and high-performance multi-core CPUs." },
-                questions = new List<QuestionData>
+                Era_Index = 4,
+                Era_Title = new LocalizedText { RU = "V Поколение (С 2000-х): Современные станции", EN = "Era V (2000s–Present): Modern Workstations" },
+                Intro_Cutscene_Text = new LocalizedText { RU = "Многоядерность, прозрачные корпуса и сверхбыстрые накопители.", EN = "Multi-core CPUs, glass cases and high-speed NVMe storage." },
+                Theory_Card_Text = new LocalizedText { RU = "Современные ПК используют сверхбыстрые накопители NVMe SSD.", EN = "Modern PCs rely on NVMe SSDs." },
+                Questions = new List<QuestionData>
                 {
                     new QuestionData {
-                        questionText = new LocalizedText { RU = "Найди современный сверхбыстрый накопитель M.2 NVMe SSD.", EN = "Find the fast modern M.2 NVMe SSD." },
-                        targetComponent = ComponentType.Storage,
-                        hintText = new LocalizedText { RU = "Это маленькая плоская планочка, прикрученная прямо к материнской плате.", EN = "It's a small flat stick mounted directly onto the motherboard." }
+                        Question_Text = new LocalizedText { RU = "Найди современный сверхбыстрый накопитель M.2 NVMe SSD.", EN = "Find the fast modern M.2 NVMe SSD." },
+                        Target_Component = ComponentType.Storage,
+                        Hint_Text = new LocalizedText { RU = "Маленькая планочка, прикрученная к материнской плате.", EN = "A small flat stick mounted directly onto the motherboard." }
                     }
                 }
             }
