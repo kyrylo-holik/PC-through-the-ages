@@ -30,7 +30,13 @@ public class InteractiveComponent : MonoBehaviour
 
     private void OnMouseDown()
     {
-        // Передаем клик в главный контроллер
+        // Если игра еще на этапе теории и клики заблокированы — ничего не делаем
+        if (GameController.Instance != null && !GameController.Instance.IsInteractionEnabled)
+        {
+            return;
+        }
+
+        // Передаем клик в главный контроллер, если фаза вопросов активна
         if (GameController.Instance != null)
         {
             GameController.Instance.OnComponentClicked(this);

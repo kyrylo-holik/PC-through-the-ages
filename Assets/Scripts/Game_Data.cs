@@ -14,7 +14,8 @@ public enum ComponentType
     GPU,           // Видеосистема
     PowerSupply,   // Блок питания
     Motherboard,   // Материнская плата
-    Peripheral     // Периферия (Клавиатура/Монитор)
+    Peripheral,    // Периферия (Клавиатура/Монитор)
+    CaseCover      //Крышка корпуса
 }
 
 [Serializable]

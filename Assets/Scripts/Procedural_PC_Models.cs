@@ -106,71 +106,90 @@ public class ProceduralPCModels : MonoBehaviour
         AttachComponent(kb, ComponentType.Peripheral, "Встроенная клавиатура", "Built-in Keyboard");
     }
 
-    // Эпоха 4: 1990-2000 ПК классика
+    // Эпоха 4: 1990-2000 ПК классика (с открывающимся корпусом)
     private static void CreateEra4_RetroPC(GameObject parent)
     {
-        // Корпус
-        GameObject caseBody = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        caseBody.transform.SetParent(parent.transform);
-        caseBody.transform.localScale = new Vector3(0.8f, 1.2f, 1.2f);
-        caseBody.GetComponent<Renderer>().material.color = new Color(0.85f, 0.82f, 0.75f);
+        // Задняя стенка / шасси (основа)
+        GameObject chassis = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        chassis.transform.SetParent(parent.transform);
+        chassis.transform.position = new Vector3(-0.1f, 0f, 0f);
+        chassis.transform.localScale = new Vector3(0.6f, 1.2f, 1.2f);
+        chassis.GetComponent<Renderer>().material.color = new Color(0.3f, 0.3f, 0.3f);
 
-        // Открывающаяся боковая крышка
+        // Передняя панель корпуса
+        GameObject frontPanel = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        frontPanel.transform.SetParent(parent.transform);
+        frontPanel.transform.position = new Vector3(-0.45f, 0f, 0f);
+        frontPanel.transform.localScale = new Vector3(0.1f, 1.22f, 1.22f);
+        frontPanel.GetComponent<Renderer>().material.color = new Color(0.85f, 0.82f, 0.75f);
+
+        // Открывающаяся боковая крышка (справа)
         GameObject sideCover = GameObject.CreatePrimitive(PrimitiveType.Cube);
         sideCover.name = "SideCover";
         sideCover.transform.SetParent(parent.transform);
-        sideCover.transform.position = new Vector3(0.41f, 0f, 0f);
-        sideCover.transform.localScale = new Vector3(0.02f, 1.18f, 1.18f);
+        sideCover.transform.position = new Vector3(0.25f, 0f, 0f);
+        sideCover.transform.localScale = new Vector3(0.05f, 1.18f, 1.18f);
         sideCover.GetComponent<Renderer>().material.color = new Color(0.75f, 0.72f, 0.65f);
+        AttachComponent(sideCover, ComponentType.CaseCover, "Боковая крышка", "Side Cover");
 
-        // Процессор внутри
+        // Процессор внутри (теперь он смещен так, чтобы быть на шасси)
         GameObject cpu = GameObject.CreatePrimitive(PrimitiveType.Cube);
         cpu.transform.SetParent(parent.transform);
-        cpu.transform.position = new Vector3(0f, 0.2f, 0f);
+        cpu.transform.position = new Vector3(-0.1f, 0.2f, 0f);
         cpu.transform.localScale = new Vector3(0.2f, 0.2f, 0.05f);
         cpu.GetComponent<Renderer>().material.color = Color.black;
         AttachComponent(cpu, ComponentType.CPU, "Процессор Pentium", "Pentium CPU");
 
-        // Видеокарта AGP
+        // Видеокарта AGP (расположена внутри корпуса, видна при снятой крышке)
         GameObject gpu = GameObject.CreatePrimitive(PrimitiveType.Cube);
         gpu.transform.SetParent(parent.transform);
-        gpu.transform.position = new Vector3(0f, -0.2f, -0.2f);
-        gpu.transform.localScale = new Vector3(0.1f, 0.3f, 0.4f);
+        gpu.transform.position = new Vector3(0.05f, -0.2f, 0f);
+        gpu.transform.localScale = new Vector3(0.4f, 0.1f, 0.4f);
         gpu.GetComponent<Renderer>().material.color = Color.green;
         AttachComponent(gpu, ComponentType.GPU, "Видеокарта AGP", "AGP Graphics Card");
     }
 
-    // Эпоха 5: Современный Игровой ПК
+    // Эпоха 5: Современный Игровой ПК (с открывающимся корпусом)
     private static void CreateEra5_ModernPC(GameObject parent)
     {
-        GameObject caseBody = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        caseBody.transform.SetParent(parent.transform);
-        caseBody.transform.localScale = new Vector3(0.9f, 1.4f, 1.3f);
-        caseBody.GetComponent<Renderer>().material.color = new Color(0.1f, 0.1f, 0.1f);
+        // Задняя стенка (шасси)
+        GameObject chassis = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        chassis.transform.SetParent(parent.transform);
+        chassis.transform.position = new Vector3(0f, 0f, 0.2f);
+        chassis.transform.localScale = new Vector3(1.2f, 1.3f, 0.2f);
+        chassis.GetComponent<Renderer>().material.color = new Color(0.12f, 0.12f, 0.12f);
 
-        // Прозрачная стеклянная панель
-        GameObject glass = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        glass.name = "SideCover";
-        glass.transform.SetParent(parent.transform);
-        glass.transform.position = new Vector3(0.46f, 0f, 0f);
-        glass.transform.localScale = new Vector3(0.02f, 1.35f, 1.25f);
-        Material glassMat = glass.GetComponent<Renderer>().material;
-        glassMat.color = new Color(0f, 0.5f, 1f, 0.4f);
+        // Блок питания (снизу)
+        GameObject psu = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        psu.transform.SetParent(parent.transform);
+        psu.transform.position = new Vector3(0f, -0.45f, 0f);
+        psu.transform.localScale = new Vector3(0.7f, 0.3f, 0.8f);
+        psu.GetComponent<Renderer>().material.color = Color.black;
 
-        // Мощная видеокарта RTX
+        // Мощная видеокарта (по центру)
         GameObject gpu = GameObject.CreatePrimitive(PrimitiveType.Cube);
         gpu.transform.SetParent(parent.transform);
-        gpu.transform.position = new Vector3(0f, -0.1f, 0f);
-        gpu.transform.localScale = new Vector3(0.3f, 0.25f, 0.7f);
+        gpu.transform.position = new Vector3(0f, 0.05f, 0f);
+        gpu.transform.localScale = new Vector3(0.8f, 0.2f, 0.6f);
         gpu.GetComponent<Renderer>().material.color = Color.magenta;
         AttachComponent(gpu, ComponentType.GPU, "Современная Видеокарта", "Modern GPU");
 
-        // NVMe SSD
+        // M.2 NVMe SSD (маленькая плата чуть выше видеокарты, отлично видна)
         GameObject ssd = GameObject.CreatePrimitive(PrimitiveType.Cube);
         ssd.transform.SetParent(parent.transform);
-        ssd.transform.position = new Vector3(0f, -0.4f, 0.2f);
-        ssd.transform.localScale = new Vector3(0.15f, 0.02f, 0.3f);
-        ssd.GetComponent<Renderer>().material.color = Color.blue;
+        ssd.transform.position = new Vector3(-0.2f, 0.35f, 0.05f);
+        ssd.transform.localScale = new Vector3(0.25f, 0.04f, 0.4f);
+        ssd.GetComponent<Renderer>().material.color = Color.cyan;
         AttachComponent(ssd, ComponentType.Storage, "M.2 NVMe SSD", "M.2 NVMe SSD");
+
+        // Стеклянная крышка (сдвинута вперед/вбок, чтобы по клику открывать вид)
+        GameObject glass = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        glass.name = "SideCover";
+        glass.transform.SetParent(parent.transform);
+        glass.transform.position = new Vector3(0f, 0f, -0.3f);
+        glass.transform.localScale = new Vector3(1.25f, 1.35f, 0.05f);
+        Material glassMat = glass.GetComponent<Renderer>().material;
+        glassMat.color = new Color(0f, 0.5f, 1f, 0.3f);
+        AttachComponent(glass, ComponentType.CaseCover, "Стеклянная крышка", "Glass Cover");
     }
 }

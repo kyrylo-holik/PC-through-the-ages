@@ -62,13 +62,14 @@ public class GameController : MonoBehaviour
         currentQuestionIndex = 0;
         errorCountOnCurrentQuestion = 0;
         isCaseOpen = false;
+        isInteractionActive = false; // Кликать по деталям пока НЕЛЬЗЯ (только вращать)
 
         if (currentPCModel != null) Destroy(currentPCModel);
+        // Создаем модель сразу, чтобы она была видна на фоне теории и вращалась
         currentPCModel = ProceduralPCModels.CreateEraModel(eraIndex, pcSpawnPoint);
 
         currentEraData = allErasData[eraIndex];
-        
-        // Сначала показываем интро уровня и теорию
+
         uiManager.ShowLevelIntroAndTheory(
             currentEraData.eraTitle.Get(LocalizationManager.Instance.CurrentLanguage),
             currentEraData.introCutsceneText.Get(LocalizationManager.Instance.CurrentLanguage),
@@ -76,8 +77,13 @@ public class GameController : MonoBehaviour
         );
     }
 
+    private bool isInteractionActive = false; // Флаг разрешения кликов по модели
+
+    public bool IsInteractionEnabled => isInteractionActive; // Публичное свойство для проверки из других скриптов
+
     public void BeginQuestionsPhase()
     {
+        isInteractionActive = true; // Разрешаем клики по деталям после нажатия "Продолжить"
         ShowCurrentQuestion();
     }
 
@@ -117,21 +123,29 @@ public class GameController : MonoBehaviour
 
     public void OnComponentClicked(InteractiveComponent component)
     {
+        // Если кликнули по крышке корпуса — открываем/закрываем её и выходим
+        if (component.componentType == ComponentType.CaseCover)
+        {
+            ToggleCaseCover();
+            return;
+        }
+
         if (currentEraData == null || currentQuestionIndex >= currentEraData.questions.Count) return;
 
-        QuestionData currentQ = currentEraData.questions[currentQuestionIndex];
+        QuestionData currentQData = currentEraData.questions[currentQuestionIndex];
+        Language lang = LocalizationManager.Instance.CurrentLanguage;
 
-        if (component.componentType == currentQ.targetComponent)
+        if (component.componentType == currentQData.targetComponent)
         {
             // ПРАВИЛЬНЫЙ ОТВЕТ
             totalQuestionsAsked++;
             totalCorrectAnswers++;
-            errorCountOnCurrentQuestion = 0; // Обнуляем счетчик ошибок
-            
-            // Снимаем подсветки
+            errorCountOnCurrentQuestion = 0;
+
             ResetAllHighlights();
 
-            uiManager.ShowFeedback(true, "Верно! / Correct!");
+            string correctMsg = (lang == Language.RU) ? "Верно!" : "Correct!";
+            uiManager.ShowFeedback(true, correctMsg);
             currentQuestionIndex++;
             Invoke(nameof(ShowCurrentQuestion), 1.5f);
         }
@@ -139,18 +153,18 @@ public class GameController : MonoBehaviour
         {
             // ОШИБКА
             errorCountOnCurrentQuestion++;
-            uiManager.ShowFeedback(false, "Не тот компонент. Попробуй еще раз.");
+            string wrongMsg = (lang == Language.RU) ? "Не тот компонент. Попробуй еще раз." : "Wrong component. Try again.";
+            uiManager.ShowFeedback(false, wrongMsg);
 
-            // 3 ошибки -> Подсказка
             if (errorCountOnCurrentQuestion == 3)
             {
-                uiManager.ShowHintPopUp(currentQ.hintText.Get(LocalizationManager.Instance.CurrentLanguage));
+                uiManager.ShowHintPopUp(currentQData.hintText.Get(lang));
             }
-            // 5 ошибок -> Подсветка правильного предмета
             else if (errorCountOnCurrentQuestion >= 5)
             {
-                HighlightTargetComponent(currentQ.targetComponent);
-                uiManager.ShowHintPopUp("Правильный элемент подсвечен желтым цветом!");
+                HighlightTargetComponent(currentQData.targetComponent);
+                string highlightMsg = (lang == Language.RU) ? "Правильный элемент подсвечен желтым цветом!" : "The correct element is highlighted in yellow!";
+                uiManager.ShowHintPopUp(highlightMsg);
             }
         }
     }
