@@ -1,34 +1,40 @@
 using UnityEngine;
 
 // Менеджер сохранения прогресса и статистики игрока
-public class SaveManager : MonoBehaviour
+public class Save_Manager : MonoBehaviour
 {
-    private const string LEVEL_KEY = "SavedLevelIndex";
-    private const string TOTAL_QUESTIONS_KEY = "TotalQuestions";
-    private const string CORRECT_ANSWERS_KEY = "CorrectAnswers";
+    private const string Level_Key = "Saved_Level_Index";
+    private const string Total_Questions_Key = "Total_Questions";
+    private const string Correct_Answers_Key = "Correct_Answers";
 
     // Сохранение текущего игрового прогресса
-    public static void Save_Progress(int levelIndex, int totalQuestions, int correctAnswers)
+    public static void Save_Progress(int Level_Index, int Total_Questions, int Correct_Answers)
     {
-        PlayerPrefs.SetInt(LEVEL_KEY, levelIndex);
-        PlayerPrefs.SetInt(TOTAL_QUESTIONS_KEY, totalQuestions);
-        PlayerPrefs.SetInt(CORRECT_ANSWERS_KEY, correctAnswers);
+        PlayerPrefs.SetInt(Level_Key, Level_Index);
+        PlayerPrefs.SetInt(Total_Questions_Key, Total_Questions);
+        PlayerPrefs.SetInt(Correct_Answers_Key, Correct_Answers);
         PlayerPrefs.Save();
     }
 
     // Получение индекса сохраненного уровня
-    public static int Get_Saved_Level() => PlayerPrefs.GetInt(LEVEL_KEY, 0);
+    public static int Get_Saved_Level()
+    {
+        return PlayerPrefs.GetInt(Level_Key, 0);
+    }
 
     // Расчет процента правильных ответов игрока
     public static float Get_Accuracy_Percentage()
     {
-        int total = PlayerPrefs.GetInt(TOTAL_QUESTIONS_KEY, 0);
-        int correct = PlayerPrefs.GetInt(CORRECT_ANSWERS_KEY, 0);
-        if (total == 0) return 0f;
-        return ((float)correct / total) * 100f;
+        int Total = PlayerPrefs.GetInt(Total_Questions_Key, 0);
+        int Correct = PlayerPrefs.GetInt(Correct_Answers_Key, 0);
+
+        if (Total == 0)
+            return 0f;
+
+        return (float)Correct / Total * 100f;
     }
 
-    // Проверка доступности бонусного уровня (пройдены все 5 уровней и точность >= 80%)
+    // Проверка доступности бонусного уровня
     public static bool Is_Bonus_Unlocked()
     {
         return Get_Saved_Level() >= 5 && Get_Accuracy_Percentage() >= 80f;
