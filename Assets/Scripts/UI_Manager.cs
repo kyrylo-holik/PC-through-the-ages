@@ -42,6 +42,7 @@ public class UI_Manager : MonoBehaviour
 
     private void Start()
     {
+        Configure_Text_Layout();
         Update_All_UI_Texts();
         Show_Main_Menu();
     }
@@ -70,8 +71,45 @@ public class UI_Manager : MonoBehaviour
         Theory_Text.text = Theory;
     }
 
+    // Тексты стали длиннее: включаем автоподбор размера шрифта и растягиваем поле стартового описания
+    private void Configure_Text_Layout()
+    {
+        Enable_Auto_Size(Intro_Text, 16f);
+        Enable_Auto_Size(Theory_Text, 16f);
+        Enable_Auto_Size(Bonus_Result_Text, 14f);
+
+        // Текст бонуса - в нижней части экрана, чтобы не закрывать 3D-модель
+        if (Bonus_Result_Text != null)
+        {
+            RectTransform Bonus_Rect = Bonus_Result_Text.rectTransform;
+            Bonus_Rect.anchorMin = new Vector2(0.08f, 0.03f);
+            Bonus_Rect.anchorMax = new Vector2(0.92f, 0.38f);
+            Bonus_Rect.offsetMin = Vector2.zero;
+            Bonus_Rect.offsetMax = Vector2.zero;
+            Bonus_Result_Text.alignment = TextAlignmentOptions.Center;
+        }
+
+    }
+
+    private void Enable_Auto_Size(TextMeshProUGUI Text, float Min_Size)
+    {
+        if (Text == null)
+            return;
+
+        Text.fontSizeMax = Text.fontSize;
+        Text.fontSizeMin = Min_Size;
+        Text.enableAutoSizing = true;
+    }
+
+    // Одна и та же кнопка «Продолжить»: до заданий открывает вопросы, после заданий - идёт дальше от теории
     public void On_Start_Level_Button_Clicked()
     {
+        if (Game_Controller.Instance.Is_Theory_Phase)
+        {
+            Game_Controller.Instance.Finish_Theory_Phase();
+            return;
+        }
+
         Hide_All_Panels();
         Gameplay_HUD.SetActive(true);
         Game_Controller.Instance.Begin_Questions_Phase();
@@ -132,6 +170,9 @@ public class UI_Manager : MonoBehaviour
 
     public void Open_Bonus_Level()
     {
+        if (Game_Controller.Instance != null)
+            Game_Controller.Instance.Clear_Bonus_Model();
+
         Hide_All_Panels();
         Bonus_Level_Panel.SetActive(true);
 
@@ -165,15 +206,29 @@ public class UI_Manager : MonoBehaviour
             Button.SetActive(false);
 
         Bonus_Result_Text.gameObject.SetActive(true);
-        Bonus_Result_Text.text = Comment;
+        Bonus_Result_Text.text =
+            Comment + "\n\n<size=65%><i>" + Localization_DB.Bonus.Return_Hint.Get(Lang) + "</i></size>";
+
+        if (Game_Controller.Instance != null)
+            Game_Controller.Instance.Show_Bonus_Model(Vendor_Name);
 
         StopAllCoroutines();
-        StartCoroutine(Return_To_Menu_After_Bonus_Delay(10f));
+        StartCoroutine(Return_To_Menu_After_Bonus_Delay(60f));
     }
 
     private System.Collections.IEnumerator Return_To_Menu_After_Bonus_Delay(float Delay)
     {
-        yield return new WaitForSeconds(Delay);
+        // Ждём либо окончания таймера, либо нажатия Esc / пробела
+        float Elapsed = 0f;
+
+        while (Elapsed < Delay)
+        {
+            if (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.Space))
+                break;
+
+            Elapsed += Time.deltaTime;
+            yield return null;
+        }
 
         Bonus_Result_Text.text = string.Empty;
         Bonus_Result_Text.gameObject.SetActive(false);
@@ -233,6 +288,9 @@ public class UI_Manager : MonoBehaviour
 
     public void Return_To_Menu()
     {
+        if (Game_Controller.Instance != null)
+            Game_Controller.Instance.Clear_Bonus_Model();
+
         Hide_All_Panels();
         Show_Main_Menu();
     }

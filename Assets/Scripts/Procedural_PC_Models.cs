@@ -2,7 +2,7 @@ using UnityEngine;
 
 // Процедурная генерация 3D-моделей компьютеров пяти эпох.
 //
-// Все координаты — ЛОКАЛЬНЫЕ (относительно корня модели), поэтому положение PC_Spawn_Point (1,1,1)
+// Все координаты - ЛОКАЛЬНЫЕ (относительно корня модели), поэтому положение PC_Spawn_Point (1,1,1)
 // не смещает отдельные части модели друг относительно друга.
 //
 // Эпохи I–III: лицевая сторона обращена к камере (в сторону -Z).
@@ -87,11 +87,7 @@ public class Procedural_PC_Models : MonoBehaviour
         Obj.transform.localRotation = Quaternion.Euler(Rot);
         Obj.transform.localScale = Scale;
 
-        Renderer Rend = Obj.GetComponent<Renderer>();
-        Rend.material.color = Paint;
-
-        if (Paint.a < 0.99f)
-            Make_Transparent(Rend.material);
+        Obj.GetComponent<Renderer>().sharedMaterial = Create_Material(Paint);
 
         if (Type.HasValue)
         {
@@ -114,8 +110,8 @@ public class Procedural_PC_Models : MonoBehaviour
         return Make_Part(PrimitiveType.Cube, Parent, Pos, Scale, Paint, Type, Rot, Solid);
     }
 
-    // Ось цилиндра по умолчанию — Y, полная высота = 2 * Scale.y.
-    // Rot = (90,0,0) направляет ось вдоль Z (диск смотрит на камеру), Rot = (0,0,90) — вдоль X.
+    // Ось цилиндра по умолчанию - Y, полная высота = 2 * Scale.y.
+    // Rot = (90,0,0) направляет ось вдоль Z (диск смотрит на камеру), Rot = (0,0,90) - вдоль X.
     private static GameObject Cylinder(Transform Parent, Vector3 Pos, Vector3 Scale, Color Paint,
         Component_Type? Type = null, Vector3 Rot = default, bool Solid = false)
     {
@@ -128,16 +124,66 @@ public class Procedural_PC_Models : MonoBehaviour
         return Make_Part(PrimitiveType.Sphere, Parent, Pos, Scale, Paint, Type, default, false);
     }
 
-    // Режим Transparent для стандартного шейдера (Built-in Render Pipeline)
+    // Создание материала нужного цвета.
+    // CreatePrimitive выдаёт материал на шейдере Standard, который в URP-сборке вырезается (розовые модели),
+    // поэтому материал создаётся явно:
+    // 1) из шаблонов Resources/PC_Lit_Opaque и Resources/PC_Lit_Transparent (самый надёжный вариант:
+    //    шейдер гарантированно попадает в сборку);
+    // 2) если шаблонов нет - через Shader.Find (URP Lit, затем Standard).
+    private static Material Create_Material(Color Paint)
+    {
+        bool Is_Transparent = Paint.a < 0.99f;
+
+        Material Template = Resources.Load<Material>(Is_Transparent ? "PC_Lit_Transparent" : "PC_Lit_Opaque");
+        Material Mat;
+
+        if (Template != null)
+        {
+            Mat = new Material(Template);
+        }
+        else
+        {
+            Shader Found = Shader.Find("Universal Render Pipeline/Lit");
+
+            if (Found == null) Found = Shader.Find("Standard");
+            if (Found == null) Found = Shader.Find("Sprites/Default");
+
+            Mat = new Material(Found);
+
+            if (Is_Transparent)
+                Make_Transparent(Mat);
+        }
+
+        if (Mat.HasProperty("_BaseColor")) Mat.SetColor("_BaseColor", Paint);
+        if (Mat.HasProperty("_Color")) Mat.SetColor("_Color", Paint);
+
+        return Mat;
+    }
+
+    // Режим прозрачности для материала, созданного без шаблона (URP Lit или Standard)
     private static void Make_Transparent(Material Mat)
     {
-        Mat.SetFloat("_Mode", 3f);
-        Mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-        Mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-        Mat.SetInt("_ZWrite", 0);
-        Mat.DisableKeyword("_ALPHATEST_ON");
-        Mat.EnableKeyword("_ALPHABLEND_ON");
-        Mat.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+        if (Mat.HasProperty("_Surface"))
+        {
+            // URP Lit
+            Mat.SetFloat("_Surface", 1f);
+            Mat.SetFloat("_Blend", 0f);
+            Mat.SetFloat("_SrcBlend", 5f);
+            Mat.SetFloat("_DstBlend", 10f);
+            Mat.SetFloat("_ZWrite", 0f);
+            Mat.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            Mat.SetOverrideTag("RenderType", "Transparent");
+        }
+        else if (Mat.HasProperty("_Mode"))
+        {
+            // Built-in Standard
+            Mat.SetFloat("_Mode", 3f);
+            Mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            Mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            Mat.SetInt("_ZWrite", 0);
+            Mat.EnableKeyword("_ALPHABLEND_ON");
+        }
+
         Mat.renderQueue = 3000;
     }
 
@@ -450,7 +496,7 @@ public class Procedural_PC_Models : MonoBehaviour
 
         Transform B = Make_Group(T, V(1.0f, -0.4f, -0.15f), default, "IC_Board").transform;
 
-        // Сама плата — отвлекающий элемент
+        // Сама плата - отвлекающий элемент
         Cube(B, V(0f, 0f, 0f), V(0.95f, 0.80f, 0.04f), Rgb(0.08f, 0.38f, 0.20f), Component_Type.Motherboard);
 
         // Большая 40-выводная микросхема (процессор)
@@ -463,7 +509,7 @@ public class Procedural_PC_Models : MonoBehaviour
                 Create_DIP_Chip(B, V((C - 1) * 0.28f, -0.05f - R * 0.22f, -0.045f), 0.20f, 0.09f);
         }
 
-        // Конденсаторы — декор
+        // Конденсаторы - декор
         for (int I = 0; I < 4; I++)
             Cylinder(B, V(-0.35f + I * 0.23f, -0.37f, -0.04f), V(0.06f, 0.04f, 0.06f), Rgb(0.10f, 0.20f, 0.70f),
                 null, V(90f, 0f, 0f));
@@ -471,8 +517,8 @@ public class Procedural_PC_Models : MonoBehaviour
 
     // ======================================================================
     // Общий каркас башенного корпуса (эпохи IV и V)
-    // Глубина (фронт-тыл) — по X, высота — по Y, ширина — по Z.
-    // Фронт — по -X, открытая сторона — по -Z, дальняя стенка (под плату) — по +Z.
+    // Глубина (фронт-тыл) - по X, высота - по Y, ширина - по Z.
+    // Фронт - по -X, открытая сторона - по -Z, дальняя стенка (под плату) - по +Z.
     // Возвращает Transform крышки, к которому можно докрепить декор.
     // ======================================================================
 
@@ -741,5 +787,205 @@ public class Procedural_PC_Models : MonoBehaviour
         }
 
         Make_Detachable(GPU_Group);
+    }
+
+    // ======================================================================
+    // Бонусный уровень: 3D-модели Intel (процессор), AMD (процессор), Nvidia (видеокарта)
+    // Модели неинтерактивны, стоят на подставке-«витрине» и вращаются сами.
+    // Модель поднята над центром, чтобы снизу осталось место под текст.
+    // ======================================================================
+
+    private static readonly Vector3 Bonus_Model_Offset = new Vector3(0f, 0.45f, 0f);
+
+    public static GameObject Create_Bonus_Model(string Vendor_Name, Transform Parent)
+    {
+        GameObject Root = new GameObject($"Bonus_Model_{Vendor_Name}");
+        Root.transform.SetParent(Parent, false);
+        Root.transform.localPosition = Bonus_Model_Offset;
+        Root.transform.localScale = Vector3.one * 0.9f;
+
+        switch (Vendor_Name)
+        {
+            case "Intel":
+                Create_Bonus_Intel(Root.transform);
+                break;
+
+            case "AMD":
+                Create_Bonus_AMD(Root.transform);
+                break;
+
+            case "Nvidia":
+                Create_Bonus_Nvidia(Root.transform);
+                break;
+
+            default:
+                Destroy(Root);
+                return null;
+        }
+
+        return Root;
+    }
+
+    // Подставка: основание, стойка и цветное кольцо фирменного цвета
+    private static void Create_Showcase_Stand(Transform T, Color Accent, float Post_Top_Y)
+    {
+        Cylinder(T, V(0f, -0.90f, 0f), V(0.60f, 0.03f, 0.60f), Rgb(0.12f, 0.12f, 0.14f));
+        Cylinder(T, V(0f, -0.925f, 0f), V(0.64f, 0.008f, 0.64f), Accent);
+
+        float Post_Height = Post_Top_Y + 0.87f;
+        Cube(T, V(0f, -0.87f + Post_Height * 0.5f, 0f), V(0.08f, Post_Height, 0.08f), Rgb(0.30f, 0.30f, 0.34f));
+    }
+
+    // Сетка золотых контактов (LGA) на обратной стороне процессора, в центре - пропуск
+    private static void Create_Pad_Grid(Transform T, int Cols, int Rows, float Spacing, Vector3 Pos)
+    {
+        Color Gold = Rgb(0.85f, 0.70f, 0.25f);
+
+        for (int R = 0; R < Rows; R++)
+        {
+            for (int C = 0; C < Cols; C++)
+            {
+                float Dx = C - (Cols - 1) / 2f;
+                float Dy = R - (Rows - 1) / 2f;
+
+                if (Mathf.Abs(Dx) < 1.5f && Mathf.Abs(Dy) < 2f)
+                    continue;
+
+                Cube(T, V(Pos.x + Dx * Spacing, Pos.y + Dy * Spacing, Pos.z), V(0.05f, 0.05f, 0.012f), Gold);
+            }
+        }
+    }
+
+    private static void Create_Bonus_Intel(Transform T)
+    {
+        Color Gold = Rgb(0.85f, 0.70f, 0.25f);
+        Color Cap = Rgb(0.45f, 0.33f, 0.18f);
+        Color White = Rgb(0.95f, 0.95f, 0.97f);
+
+        Transform Chip = Make_Group(T, V(0f, 0.15f, 0f), default, "Intel_CPU").transform;
+
+        // Текстолитовая подложка и теплораспределитель (крышка) процессора
+        Cube(Chip, V(0f, 0f, 0f), V(1.25f, 1.50f, 0.06f), Rgb(0.08f, 0.42f, 0.26f));
+        Cube(Chip, V(0f, 0.02f, -0.07f), V(0.95f, 1.05f, 0.08f), Rgb(0.76f, 0.78f, 0.82f));
+        Cube(Chip, V(0f, 0.02f, -0.115f), V(0.85f, 0.95f, 0.015f), Rgb(0.86f, 0.88f, 0.91f));
+
+        // Синяя табличка с «буквами» и гравировка
+        Cube(Chip, V(0f, 0.30f, -0.126f), V(0.55f, 0.20f, 0.01f), Rgb(0.00f, 0.44f, 0.78f));
+
+        for (int I = 0; I < 5; I++)
+            Cube(Chip, V(-0.2f + I * 0.1f, 0.30f, -0.133f), V(0.06f, 0.09f, 0.006f), White);
+
+        for (int I = 0; I < 4; I++)
+            Cube(Chip, V(0f, -0.05f - I * 0.12f, -0.126f), V(0.6f - I * 0.1f, 0.025f, 0.006f), Rgb(0.55f, 0.57f, 0.62f));
+
+        // Конденсаторы по краям подложки
+        for (int I = 0; I < 8; I++)
+        {
+            float X = -0.49f + I * 0.14f;
+            Cube(Chip, V(X, 0.65f, -0.045f), V(0.07f, 0.04f, 0.03f), Cap);
+            Cube(Chip, V(X, -0.63f, -0.045f), V(0.07f, 0.04f, 0.03f), Cap);
+        }
+
+        // Метка ключа в углу
+        Cube(Chip, V(-0.52f, -0.68f, -0.035f), V(0.09f, 0.09f, 0.01f), Gold, null, V(0f, 0f, 45f));
+
+        // Обратная сторона: контакты
+        Create_Pad_Grid(Chip, 10, 12, 0.09f, V(0f, 0f, 0.045f));
+
+        Create_Showcase_Stand(T, Rgb(0.00f, 0.44f, 0.78f), -0.60f);
+    }
+
+    private static void Create_Bonus_AMD(Transform T)
+    {
+        Color Gold = Rgb(0.85f, 0.70f, 0.25f);
+        Color Cap = Rgb(0.45f, 0.33f, 0.18f);
+        Color Metal = Rgb(0.78f, 0.80f, 0.84f);
+        Color Orange = Rgb(0.93f, 0.30f, 0.08f);
+
+        Transform Chip = Make_Group(T, V(0f, 0.15f, 0f), default, "AMD_CPU").transform;
+
+        // Подложка
+        Cube(Chip, V(0f, 0f, 0f), V(1.30f, 1.30f, 0.06f), Rgb(0.08f, 0.42f, 0.26f));
+
+        // Теплораспределитель «осьминог»: основное тело и восемь лапок
+        Cube(Chip, V(0f, 0f, -0.07f), V(0.80f, 0.80f, 0.08f), Metal);
+
+        foreach (float Sign in new[] { -1f, 1f })
+        {
+            foreach (float Shift in new[] { -0.27f, 0.27f })
+            {
+                Cube(Chip, V(Sign * 0.49f, Shift, -0.07f), V(0.18f, 0.20f, 0.08f), Metal);
+                Cube(Chip, V(Shift, Sign * 0.49f, -0.07f), V(0.20f, 0.18f, 0.08f), Metal);
+            }
+        }
+
+        Cube(Chip, V(0f, 0f, -0.115f), V(0.70f, 0.70f, 0.015f), Rgb(0.87f, 0.89f, 0.92f));
+
+        // Конденсаторы между лапками
+        Cube(Chip, V(-0.52f, 0f, -0.045f), V(0.08f, 0.14f, 0.03f), Cap);
+        Cube(Chip, V(0.52f, 0f, -0.045f), V(0.08f, 0.14f, 0.03f), Cap);
+        Cube(Chip, V(0f, 0.52f, -0.045f), V(0.14f, 0.08f, 0.03f), Cap);
+        Cube(Chip, V(0f, -0.52f, -0.045f), V(0.14f, 0.08f, 0.03f), Cap);
+
+        // Оранжевая табличка и гравировка
+        Cube(Chip, V(0f, 0.20f, -0.126f), V(0.50f, 0.14f, 0.01f), Orange);
+
+        for (int I = 0; I < 4; I++)
+            Cube(Chip, V(-0.15f + I * 0.1f, 0.20f, -0.133f), V(0.06f, 0.07f, 0.006f), Rgb(0.98f, 0.98f, 0.98f));
+
+        for (int I = 0; I < 3; I++)
+            Cube(Chip, V(0f, -0.05f - I * 0.12f, -0.126f), V(0.5f - I * 0.1f, 0.025f, 0.006f), Rgb(0.55f, 0.57f, 0.62f));
+
+        // Метка ключа и обратная сторона с контактами
+        Cube(Chip, V(-0.57f, -0.57f, -0.035f), V(0.09f, 0.09f, 0.01f), Gold, null, V(0f, 0f, 45f));
+        Create_Pad_Grid(Chip, 12, 12, 0.085f, V(0f, 0f, 0.045f));
+
+        Create_Showcase_Stand(T, Orange, -0.50f);
+    }
+
+    private static void Create_Bonus_Nvidia(Transform T)
+    {
+        Color Green = Rgb(0.46f, 0.73f, 0.00f);
+        Color Dark = Rgb(0.09f, 0.09f, 0.10f);
+
+        Transform Card = Make_Group(T, V(0f, 0.15f, 0f), default, "Nvidia_GPU").transform;
+
+        // Кожух, лицевая вставка и задняя пластина
+        Cube(Card, V(0f, 0f, 0f), V(1.90f, 0.80f, 0.14f), Dark);
+        Cube(Card, V(0f, 0f, -0.08f), V(1.80f, 0.70f, 0.02f), Rgb(0.12f, 0.12f, 0.14f));
+        Cube(Card, V(0f, 0f, 0.08f), V(1.90f, 0.80f, 0.02f), Rgb(0.18f, 0.18f, 0.20f));
+        Cube(Card, V(0f, 0f, 0.092f), V(1.00f, 0.05f, 0.01f), Green);
+
+        // Два вентилятора по 9 лопастей
+        foreach (float Fan_X in new[] { -0.5f, 0.5f })
+        {
+            Cylinder(Card, V(Fan_X, 0f, -0.095f), V(0.62f, 0.01f, 0.62f), Rgb(0.05f, 0.05f, 0.06f), null, V(90f, 0f, 0f));
+            Cylinder(Card, V(Fan_X, 0f, -0.10f), V(0.56f, 0.01f, 0.56f), Rgb(0.15f, 0.15f, 0.17f), null, V(90f, 0f, 0f));
+
+            for (int I = 0; I < 9; I++)
+            {
+                float Angle = I * 40f;
+                float Rad = Angle * Mathf.Deg2Rad;
+
+                Cube(Card, V(Fan_X + Mathf.Cos(Rad) * 0.18f, Mathf.Sin(Rad) * 0.18f, -0.108f),
+                    V(0.22f, 0.07f, 0.01f), Rgb(0.22f, 0.22f, 0.25f), null, V(0f, 0f, Angle + 35f));
+            }
+
+            Cylinder(Card, V(Fan_X, 0f, -0.12f), V(0.16f, 0.015f, 0.16f), Rgb(0.08f, 0.08f, 0.09f), null, V(90f, 0f, 0f));
+            Cylinder(Card, V(Fan_X, 0f, -0.132f), V(0.08f, 0.01f, 0.08f), Green, null, V(90f, 0f, 0f));
+        }
+
+        // Зелёный акцент: логотип между вентиляторами и полоса снизу
+        Cube(Card, V(0f, 0f, -0.092f), V(0.20f, 0.20f, 0.012f), Green);
+        Cube(Card, V(0f, 0f, -0.100f), V(0.12f, 0.04f, 0.008f), Dark);
+        Cube(Card, V(0f, -0.33f, -0.092f), V(1.60f, 0.03f, 0.01f), Green);
+        Cube(Card, V(0f, 0.402f, 0f), V(0.60f, 0.012f, 0.04f), Green);
+
+        // Разъём питания, планка и контакты PCIe
+        Cube(Card, V(0.55f, 0.43f, 0f), V(0.30f, 0.06f, 0.12f), Rgb(0.05f, 0.05f, 0.06f));
+        Cube(Card, V(-0.965f, 0f, 0f), V(0.025f, 0.85f, 0.18f), Rgb(0.75f, 0.75f, 0.78f));
+        Cube(Card, V(-0.10f, -0.445f, 0f), V(1.00f, 0.09f, 0.03f), Rgb(0.85f, 0.70f, 0.25f));
+
+        Create_Showcase_Stand(T, Green, -0.49f);
     }
 }

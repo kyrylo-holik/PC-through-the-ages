@@ -10,6 +10,7 @@ public class Game_Controller : MonoBehaviour
     [SerializeField] private UI_Manager UI_Manager_Ref;
 
     private const float Next_Question_Delay = 1.5f;
+    private const float Bonus_Auto_Rotation_Speed = 20f;   // градусов в секунду
     private const int Hint_Error_Threshold = 3;
     private const int Highlight_Error_Threshold = 5;
 
@@ -69,8 +70,8 @@ public class Game_Controller : MonoBehaviour
     private int Current_Question_Index;
     private int Error_Count_On_Current_Question;
 
-    // Статистика: Total_Questions_Asked — сколько вопросов игрок прошёл,
-    // Total_Correct_Answers — на скольких из них ответил с первой попытки (без ошибок)
+    // Статистика: Total_Questions_Asked - сколько вопросов игрок прошёл,
+    // Total_Correct_Answers - на скольких из них ответил с первой попытки (без ошибок)
     private int Total_Questions_Asked;
     private int Total_Correct_Answers;
 
@@ -79,9 +80,13 @@ public class Game_Controller : MonoBehaviour
     private List<Era_Level_Data> All_Eras_Data;
 
     private bool Is_Case_Open;
+    private bool Is_Bonus_Model_Active;
     private bool Is_Interaction_Active;
 
     public bool Is_Interaction_Enabled => Is_Interaction_Active;
+
+    // true, пока на экране теория эпохи (она показывается ПОСЛЕ заданий)
+    public bool Is_Theory_Phase { get; private set; }
 
     private void Awake()
     {
@@ -103,6 +108,31 @@ public class Game_Controller : MonoBehaviour
             float Rotation_X = Input.GetAxis("Mouse X") * 5f;
             Current_PC_Model.transform.Rotate(Vector3.up, -Rotation_X, Space.World);
         }
+        else if (Is_Bonus_Model_Active)
+        {
+            // Бонусная модель медленно вращается сама, как на витрине
+            Current_PC_Model.transform.Rotate(Vector3.up, Bonus_Auto_Rotation_Speed * Time.deltaTime, Space.World);
+        }
+    }
+
+    // Показать 3D-модель выбранного производителя (Intel, AMD, Nvidia) на бонусном уровне
+    public void Show_Bonus_Model(string Vendor_Name)
+    {
+        Clear_Current_PC_Model();
+
+        Current_Era_Data = null;
+        Is_Interaction_Active = false;
+
+        Current_PC_Model = Procedural_PC_Models.Create_Bonus_Model(Vendor_Name, PC_Spawn_Point);
+        Is_Bonus_Model_Active = Current_PC_Model != null;
+    }
+
+    public void Clear_Bonus_Model()
+    {
+        if (!Is_Bonus_Model_Active)
+            return;
+
+        Clear_Current_PC_Model();
     }
 
     public void Start_New_Game()
@@ -115,6 +145,7 @@ public class Game_Controller : MonoBehaviour
         Total_Questions_Asked = 0;
         Total_Correct_Answers = 0;
         Is_Interaction_Active = false;
+        Is_Theory_Phase = false;
 
         UI_Manager_Ref.Show_Main_Intro();
     }
@@ -128,6 +159,7 @@ public class Game_Controller : MonoBehaviour
         Error_Count_On_Current_Question = 0;
         Is_Case_Open = false;
         Is_Interaction_Active = false;
+        Is_Theory_Phase = false;
 
         if (Current_PC_Model != null)
             Destroy(Current_PC_Model);
@@ -140,7 +172,7 @@ public class Game_Controller : MonoBehaviour
         UI_Manager_Ref.Show_Level_Intro_And_Theory(
             Localization_DB.Era.Titles[Era_Index].Get(Current_Language),
             Localization_DB.Era.Intro[Era_Index].Get(Current_Language),
-            Localization_DB.Era.Theory[Era_Index].Get(Current_Language)
+            string.Empty   // теория появится только после заданий
         );
     }
 
@@ -156,6 +188,8 @@ public class Game_Controller : MonoBehaviour
             Destroy(Current_PC_Model);
             Current_PC_Model = null;
         }
+
+        Is_Bonus_Model_Active = false;
     }
 
     private void Show_Current_Question()
@@ -175,15 +209,37 @@ public class Game_Controller : MonoBehaviour
 
             Save_Manager.Save_Progress(Current_Era_Index + 1, Total_Questions_Asked, Total_Correct_Answers);
 
-            if (Current_Era_Index + 1 < All_Eras_Data.Count)
-            {
-                Start_Era_Level(Current_Era_Index + 1);
-            }
-            else
-            {
-                Clear_Current_PC_Model();
-                UI_Manager_Ref.Show_Game_Completion_Screen(Save_Manager.Get_Accuracy_Percentage());
-            }
+            Show_Theory_Phase();
+        }
+    }
+
+    // Теория эпохи: показывается после того, как ученик выполнил все задания
+    private void Show_Theory_Phase()
+    {
+        Is_Theory_Phase = true;
+
+        Language Current_Language = Localization_Manager.Instance.Current_Language;
+
+        UI_Manager_Ref.Show_Level_Intro_And_Theory(
+            Localization_DB.Era.Titles[Current_Era_Index].Get(Current_Language),
+            Localization_DB.Gameplay.Theory_Header.Get(Current_Language),
+            Localization_DB.Era.Theory[Current_Era_Index].Get(Current_Language)
+        );
+    }
+
+    // Вызывается кнопкой «Продолжить» на экране теории: переход к следующей эпохе или к итогам
+    public void Finish_Theory_Phase()
+    {
+        Is_Theory_Phase = false;
+
+        if (Current_Era_Index + 1 < All_Eras_Data.Count)
+        {
+            Start_Era_Level(Current_Era_Index + 1);
+        }
+        else
+        {
+            Clear_Current_PC_Model();
+            UI_Manager_Ref.Show_Game_Completion_Screen(Save_Manager.Get_Accuracy_Percentage());
         }
     }
 
@@ -216,7 +272,7 @@ public class Game_Controller : MonoBehaviour
         Question_Data Current_Q_Data = Has_Question ? Current_Era_Data.Questions[Current_Question_Index] : null;
 
         // Клик по крышке корпуса: открыть/закрыть.
-        // Если текущее задание — «открой корпус», то открытие засчитывается как верный ответ.
+        // Если текущее задание - «открой корпус», то открытие засчитывается как верный ответ.
         if (Component.Component_Type == Component_Type.Case_Cover)
         {
             bool Is_Open_Now = Toggle_Case_Cover_Internal();

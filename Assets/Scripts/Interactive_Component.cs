@@ -44,7 +44,7 @@ public class Interactive_Component : MonoBehaviour
         if (Game_Controller.Instance == null)
             return;
 
-        // Если игра на этапе теории или идёт пауза между вопросами — клики заблокированы
+        // Если игра на этапе теории или идёт пауза между вопросами - клики заблокированы
         if (!Game_Controller.Instance.Is_Interaction_Enabled)
             return;
 
