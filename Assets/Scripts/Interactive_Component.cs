@@ -7,24 +7,36 @@ public class Interactive_Component : MonoBehaviour
 
     private Renderer Mesh_Renderer;
     private Color Original_Color;
+    private bool Is_Cached;
 
-    private void Awake()
+    // Исходный цвет запоминается лениво (при первом обращении), а не в Awake:
+    // так не важно, в каком порядке процедурная модель красит объект и вешает компонент
+    private void Cache_Original()
     {
+        if (Is_Cached)
+            return;
+
         Mesh_Renderer = GetComponent<Renderer>();
 
         if (Mesh_Renderer != null)
-        {
             Original_Color = Mesh_Renderer.material.color;
-        }
+
+        Is_Cached = true;
     }
 
     // Управление подсветкой компонента (включение/выключение)
     public void Highlight(bool State)
     {
+        Cache_Original();
+
         if (Mesh_Renderer == null)
             return;
 
-        Mesh_Renderer.material.color = State ? Color.yellow : Original_Color;
+        // Для прозрачных деталей (стекло) сохраняем полупрозрачность
+        Color Highlight_Color = Color.yellow;
+        Highlight_Color.a = Mathf.Max(Original_Color.a, 0.5f);
+
+        Mesh_Renderer.material.color = State ? Highlight_Color : Original_Color;
     }
 
     private void OnMouseDown()
@@ -32,7 +44,7 @@ public class Interactive_Component : MonoBehaviour
         if (Game_Controller.Instance == null)
             return;
 
-        // Если игра на этапе теории и клики заблокированы — ничего не делаем
+        // Если игра на этапе теории или идёт пауза между вопросами — клики заблокированы
         if (!Game_Controller.Instance.Is_Interaction_Enabled)
             return;
 

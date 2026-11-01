@@ -12,12 +12,36 @@ public enum Language
 // Перечисление типов интерактивных компонентов компьютера
 public enum Component_Type
 {
-    Vacuum_Tube,     // Лампы (Эпоха 1)
-    Transistor,      // Транзисторы (Эпоха 2)
-    Storage,         // Накопитель (Лента, дискета, SSD)
-    CPU,             // Процессор / логический блок
-    GPU,             // Видеосистема
-    Case_Cover       // Крышка корпуса
+    // Эпоха I
+    Vacuum_Tube,        // Электронные лампы
+    Switch_Panel,       // Панель тумблеров
+    Patch_Panel,        // Коммутационная панель с кабелями
+    Punch_Card_Reader,  // Устройство ввода с перфокарт
+
+    // Эпоха II
+    Transistor,         // Платы с транзисторами
+    Magnetic_Tape,      // Накопитель на магнитной ленте
+    Core_Memory,        // Память на магнитных сердечниках
+    Control_Console,    // Пульт оператора
+
+    // Эпоха III
+    Integrated_Circuit, // Микросхемы
+    Floppy_Drive,       // Дисковод гибких дискет
+    Keyboard,           // Клавиатура
+    Monitor_CRT,        // ЭЛТ-монитор
+
+    // Эпохи IV–V (разборные ПК)
+    CPU,                // Процессор
+    RAM,                // Оперативная память
+    GPU,                // Видеокарта
+    Hard_Drive,         // Жёсткий диск
+    SSD_NVMe,           // Накопитель M.2 NVMe
+    Cooler,             // Система охлаждения процессора
+    CD_Drive,           // Привод компакт-дисков (отвлекающий элемент)
+    Sound_Card,         // Звуковая плата (отвлекающий элемент)
+    PSU,                // Блок питания (отвлекающий элемент)
+    Motherboard,        // Материнская плата и её детали (отвлекающий элемент)
+    Case_Cover          // Боковая крышка корпуса
 }
 
 // Класс для хранения локализованного текста
@@ -219,63 +243,240 @@ public static class Localization_DB
         };
     }
 
-    // Вопросы и подсказки
+    // Вопросы и подсказки: индекс 1 — номер эпохи, индекс 2 — номер вопроса внутри эпохи.
+    // Порядок вопросов должен совпадать с Era_Targets в Game_Controller.
     public static class Questions
     {
-        public static readonly Localized_Text[] Q =
+        public static readonly Localized_Text[][] Q =
         {
-            new Localized_Text(
-                "Найди главный переключающий элемент 1-го поколения ЭВМ.",
-                "Find the main switching element of 1st gen computers."
-            ),
+            // Эпоха I: лампы, тумблеры, коммутационная панель, перфокарты
+            new[]
+            {
+                new Localized_Text(
+                    "Найди главный переключающий элемент 1-го поколения ЭВМ.",
+                    "Find the main switching element of 1st gen computers."
+                ),
+                new Localized_Text(
+                    "Найди панель с тумблерами, на которой оператор вручную задавал числа и режимы.",
+                    "Find the switch panel where the operator set numbers and modes by hand."
+                ),
+                new Localized_Text(
+                    "Найди коммутационную панель: для смены программы операторы переставляли на ней кабели.",
+                    "Find the patch panel: operators changed the program by re-plugging cables on it."
+                ),
+                new Localized_Text(
+                    "Найди устройство ввода, считывающее данные с перфокарт.",
+                    "Find the input device that reads data from punched cards."
+                )
+            },
 
-            new Localized_Text(
-                "Укажи на устройство для хранения данных на магнитной ленте.",
-                "Point to the magnetic tape storage device."
-            ),
+            // Эпоха II: транзисторы, лента, ферритовая память, пульт
+            new[]
+            {
+                new Localized_Text(
+                    "Найди платы с транзисторами — они пришли на смену лампам.",
+                    "Find the transistor boards — transistors replaced vacuum tubes."
+                ),
+                new Localized_Text(
+                    "Укажи на устройство для хранения данных на магнитной ленте.",
+                    "Point to the magnetic tape storage device."
+                ),
+                new Localized_Text(
+                    "Найди память на магнитных сердечниках.",
+                    "Find the magnetic core memory."
+                ),
+                new Localized_Text(
+                    "Найди пульт оператора с лампочками и переключателями.",
+                    "Find the operator's console with lamps and switches."
+                )
+            },
 
-            new Localized_Text(
-                "Найди дисковод для гибких дискет 5.25\".",
-                "Find the drive for 5.25\" floppy disks."
-            ),
+            // Эпоха III: микросхемы, дискета, клавиатура, монитор
+            new[]
+            {
+                new Localized_Text(
+                    "Найди интегральную схему (микросхему) на плате.",
+                    "Find the integrated circuit (microchip) on the board."
+                ),
+                new Localized_Text(
+                    "Найди дисковод для гибких дискет 5.25\".",
+                    "Find the drive for 5.25\" floppy disks."
+                ),
+                new Localized_Text(
+                    "Найди клавиатуру.",
+                    "Find the keyboard."
+                ),
+                new Localized_Text(
+                    "Найди монитор с электронно-лучевой трубкой (ЭЛТ).",
+                    "Find the CRT monitor."
+                )
+            },
 
-            new Localized_Text(
-                "Открой корпус и найди плату, отвечающую за 3D-графику.",
-                "Open the case and find the card responsible for 3D graphics."
-            ),
+            // Эпоха IV: разборный ПК — крышка, процессор, ОЗУ, видеокарта, жёсткий диск
+            new[]
+            {
+                new Localized_Text(
+                    "Открой корпус: кликни по боковой крышке системного блока.",
+                    "Open the case: click the side cover of the system unit."
+                ),
+                new Localized_Text(
+                    "Найди центральный процессор: он закрыт радиатором с вентилятором.",
+                    "Find the CPU: it is covered by a heatsink with a fan."
+                ),
+                new Localized_Text(
+                    "Найди модули оперативной памяти.",
+                    "Find the RAM modules."
+                ),
+                new Localized_Text(
+                    "Найди плату, отвечающую за 3D-графику.",
+                    "Find the card responsible for 3D graphics."
+                ),
+                new Localized_Text(
+                    "Найди жёсткий диск (HDD).",
+                    "Find the hard disk drive (HDD)."
+                )
+            },
 
-            new Localized_Text(
-                "Найди современный сверхбыстрый накопитель M.2 NVMe SSD.",
-                "Find the fast modern M.2 NVMe SSD."
-            )
+            // Эпоха V: разборный ПК — стекло, охлаждение, ОЗУ, видеокарта, NVMe
+            new[]
+            {
+                new Localized_Text(
+                    "Открой корпус: кликни по стеклянной боковой панели.",
+                    "Open the case: click the glass side panel."
+                ),
+                new Localized_Text(
+                    "Найди систему охлаждения процессора.",
+                    "Find the CPU cooling system."
+                ),
+                new Localized_Text(
+                    "Найди модули оперативной памяти с подсветкой.",
+                    "Find the RAM modules with lighting."
+                ),
+                new Localized_Text(
+                    "Найди видеокарту.",
+                    "Find the graphics card."
+                ),
+                new Localized_Text(
+                    "Найди современный сверхбыстрый накопитель M.2 NVMe SSD.",
+                    "Find the fast modern M.2 NVMe SSD."
+                )
+            }
         };
 
-        public static readonly Localized_Text[] Hints =
+        public static readonly Localized_Text[][] Hints =
         {
-            new Localized_Text(
-                "Ищи стеклянные колбы, похожие на лампочки.",
-                "Look for glass bulbs similar to lightbulbs."
-            ),
+            // Эпоха I
+            new[]
+            {
+                new Localized_Text(
+                    "Ищи стеклянные колбы, похожие на лампочки.",
+                    "Look for glass bulbs similar to lightbulbs."
+                ),
+                new Localized_Text(
+                    "Ряды маленьких тумблеров на светлой панели в центральном шкафу.",
+                    "Rows of small toggle switches on the light panel in the middle cabinet."
+                ),
+                new Localized_Text(
+                    "Тёмная панель с гнёздами и цветными проводами.",
+                    "A dark panel with sockets and coloured cords."
+                ),
+                new Localized_Text(
+                    "Приземистый блок справа со стопкой картонных карточек.",
+                    "A squat unit on the right with a stack of cardboard cards."
+                )
+            },
 
-            new Localized_Text(
-                "Оно похоже на круглые катушки или бобины.",
-                "It looks like round tape reels."
-            ),
+            // Эпоха II
+            new[]
+            {
+                new Localized_Text(
+                    "Ряд зелёных плат с маленькими металлическими баночками.",
+                    "A row of green boards with small metal cans."
+                ),
+                new Localized_Text(
+                    "Оно похоже на круглые катушки или бобины.",
+                    "It looks like round tape reels."
+                ),
+                new Localized_Text(
+                    "Рамка с сеткой крошечных колечек, нанизанных на тонкие провода.",
+                    "A frame with a grid of tiny rings strung on thin wires."
+                ),
+                new Localized_Text(
+                    "Наклонная панель внизу центрального шкафа с рядами цветных лампочек.",
+                    "A sloped panel at the bottom of the central cabinet with rows of coloured lamps."
+                )
+            },
 
-            new Localized_Text(
-                "Ищи узкую щель на передней панели корпуса.",
-                "Look for a narrow slot on the front panel."
-            ),
+            // Эпоха III
+            new[]
+            {
+                new Localized_Text(
+                    "Чёрные прямоугольные корпуса с рядами металлических ножек.",
+                    "Black rectangular packages with rows of metal pins."
+                ),
+                new Localized_Text(
+                    "Ищи узкую щель на передней панели корпуса.",
+                    "Look for a narrow slot on the front panel."
+                ),
+                new Localized_Text(
+                    "Плоская панель с рядами клавиш перед системным блоком.",
+                    "A flat panel with rows of keys in front of the main unit."
+                ),
+                new Localized_Text(
+                    "Массивный бежевый корпус с тёмно-зелёным экраном.",
+                    "A bulky beige case with a dark green screen."
+                )
+            },
 
-            new Localized_Text(
-                "Кликни по планке в слоте AGP/PCI.",
-                "Click the AGP/PCI card."
-            ),
+            // Эпоха IV
+            new[]
+            {
+                new Localized_Text(
+                    "Крышка — большая панель на боковой стороне корпуса. Если не видно, поверни модель правой кнопкой мыши.",
+                    "The cover is the large panel on the side of the case. If you can't see it, rotate the model with the right mouse button."
+                ),
+                new Localized_Text(
+                    "Квадратный радиатор с маленьким вентилятором на материнской плате.",
+                    "A square heatsink with a small fan on the motherboard."
+                ),
+                new Localized_Text(
+                    "Узкие вертикальные планки с чёрными микросхемами рядом с процессором.",
+                    "Narrow vertical sticks with black chips next to the processor."
+                ),
+                new Localized_Text(
+                    "Широкая плата с радиатором и маленьким вентилятором — не путай со звуковой.",
+                    "A wide card with a heatsink and a small fan — don't confuse it with the sound card."
+                ),
+                new Localized_Text(
+                    "Серебристая металлическая коробка в нижней передней части корпуса.",
+                    "A silver metal box in the lower front part of the case."
+                )
+            },
 
-            new Localized_Text(
-                "Маленькая планочка, прикрученная к материнской плате.",
-                "A small flat stick mounted directly onto the motherboard."
-            )
+            // Эпоха V
+            new[]
+            {
+                new Localized_Text(
+                    "Панель прозрачная и голубоватая. Если её не видно, поверни модель правой кнопкой мыши.",
+                    "The panel is transparent and bluish. If you can't see it, rotate the model with the right mouse button."
+                ),
+                new Localized_Text(
+                    "Круглая помпа с подсветкой и две трубки, идущие к радиатору.",
+                    "A round pump with lighting and two tubes leading to the radiator."
+                ),
+                new Localized_Text(
+                    "Две вертикальные планки с яркими светящимися полосами.",
+                    "Two vertical sticks with bright glowing strips."
+                ),
+                new Localized_Text(
+                    "Самая крупная плата с тремя вентиляторами.",
+                    "The largest card with three fans."
+                ),
+                new Localized_Text(
+                    "Маленькая планочка, прикрученная к материнской плате.",
+                    "A small flat stick mounted directly onto the motherboard."
+                )
+            }
         };
     }
 
