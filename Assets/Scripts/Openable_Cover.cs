@@ -1,68 +1,70 @@
 using System.Collections;
 using UnityEngine;
 
-// Боковая крышка корпуса. Сдвигается (и при необходимости поворачивается) в открытое положение.
-// В отличие от старого SetActive(false), крышка остаётся в сцене и по ней можно кликнуть снова, чтобы закрыть корпус.
+// Боковая крышка корпуса (в 4-й эпохе — металлическая, в 5-й — стеклянная).
+// Открываясь, она плавно сдвигается назад. Крышка остаётся в сцене и по ней
+// можно кликнуть ещё раз, чтобы закрыть корпус.
 public class Openable_Cover : MonoBehaviour
 {
-    public Vector3 Open_Euler = Vector3.zero;
+    // Сколько секунд занимает открытие или закрытие.
     public float Move_Duration = 0.5f;
 
-    private Vector3 Closed_Position;
-    private Vector3 Open_Position;
-    private Quaternion Closed_Rotation;
-    private Quaternion Open_Rotation;
-    private Coroutine Move_Routine;
+    private Vector3 Closed_Position;   // позиция закрытой крышки
+    private Vector3 Open_Position;     // позиция открытой крышки
+    private Coroutine Move_Routine;    // текущая анимация
 
+    // true — крышка открыта (или открывается).
     public bool Is_Open { get; private set; }
 
-    // Вызывается после того, как крышка поставлена на своё место в закрытом положении
+    // Запоминает позицию закрытой крышки и на сколько её нужно сдвинуть при открытии.
+    // Вызывается один раз, когда крышка уже стоит на своём месте.
     public void Setup(Vector3 Open_Offset)
     {
         Closed_Position = transform.localPosition;
         Open_Position = Closed_Position + Open_Offset;
-        Closed_Rotation = transform.localRotation;
-        Open_Rotation = Closed_Rotation * Quaternion.Euler(Open_Euler);
         Is_Open = false;
     }
 
+    // Открыть закрытую крышку или закрыть открытую.
     public void Toggle()
     {
         Set_Open(!Is_Open);
     }
 
+    // Принудительно открыть (true) или закрыть (false) крышку.
     public void Set_Open(bool State)
     {
+        // Крышка уже в нужном состоянии.
         if (Is_Open == State)
             return;
 
         Is_Open = State;
 
+        // Останавливаем предыдущую анимацию, если она ещё идёт.
         if (Move_Routine != null)
             StopCoroutine(Move_Routine);
 
-        Move_Routine = StartCoroutine(Move_To(
-            State ? Open_Position : Closed_Position,
-            State ? Open_Rotation : Closed_Rotation));
+        Move_Routine = StartCoroutine(Move_To(State ? Open_Position : Closed_Position));
     }
 
-    private IEnumerator Move_To(Vector3 Target_Position, Quaternion Target_Rotation)
+    // Плавно двигает крышку из текущей позиции в целевую.
+    private IEnumerator Move_To(Vector3 Target_Position)
     {
         Vector3 From_Position = transform.localPosition;
-        Quaternion From_Rotation = transform.localRotation;
         float Time_Passed = 0f;
 
         while (Time_Passed < Move_Duration)
         {
             Time_Passed += Time.deltaTime;
-            float T = Mathf.SmoothStep(0f, 1f, Time_Passed / Move_Duration);
-            transform.localPosition = Vector3.Lerp(From_Position, Target_Position, T);
-            transform.localRotation = Quaternion.Slerp(From_Rotation, Target_Rotation, T);
-            yield return null;
+
+            // SmoothStep делает движение мягким: медленный старт и плавная остановка.
+            float Progress = Mathf.SmoothStep(0f, 1f, Time_Passed / Move_Duration);
+            transform.localPosition = Vector3.Lerp(From_Position, Target_Position, Progress);
+
+            yield return null;   // ждём следующий кадр
         }
 
         transform.localPosition = Target_Position;
-        transform.localRotation = Target_Rotation;
         Move_Routine = null;
     }
 }
